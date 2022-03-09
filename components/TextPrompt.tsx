@@ -22,6 +22,8 @@ const Cursor = styled.div`
 `;
 
 const TemplateBox = styled.div`
+  max-height: 300px;
+  overflow: auto;
   position: relative;
   display: flex;
   flex-flow: row wrap;
@@ -53,7 +55,7 @@ const TemplateWord = styled.span`
 
 const ControlBox = styled.div`
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   grid-gap: 10px;
 `;
 
@@ -150,9 +152,18 @@ interface KeyTelemetry {
 
 interface TextPromptState {
   active: boolean;
+  wpm: number;
   timer: number;
   words: string[];
-  telemetry: KeyTelemetry[][];
+  telemetry: {
+    numCorrect: number;
+    numErrors: number;
+    history: {
+      [wordIndex: string | number]: {
+        [charIndex: string | number]: KeyTelemetry;
+      };
+    };
+  };
   userInput: string;
   currentWordIndex: number;
   currentCharIndex: number;
@@ -160,15 +171,31 @@ interface TextPromptState {
 }
 
 const lorem =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget urna odio. Cras sed diam tortor. Maecenas arcu eros, bibendum vel urna ut, congue scelerisque diam. Nullam ac risus a magna porttitor posuere. Integer maximus auctor iaculis. Sed feugiat elit eget magna suscipit, mollis laoreet nunc bibendum. Integer congue est odio, efficitur eleifend libero molestie eu. Integer non sem nec massa consectetur mollis ac id risus. Nulla molestie vulputate eleifend. Aliquam ex tellus, tincidunt a urna vel, dictum mollis leo. Suspendisse a sapien ligula.";
+  "Studying is the main source of knowledge. Books are indeed never failing friends of man. For a mature mind, reading is the greatest source of pleasure and solace to distressed minds. The study of good books ennobles us and broadens our outlook. Therefore, the habit of reading should be cultivated. A student should never confine himself to his schoolbooks only. He should not miss the pleasure locked in the classics, poetry, drama, history, philosophy etc. We can derive benefit from other’s experiences with the help of books. The various sufferings, endurance and joy described in books enable us to have a closer look at human life. They also inspire us to face the hardships of life courageously. Nowadays there are innumerable books and time is scarce. So we should read only the best and the greatest among them. With the help of books we shall be able to make our thinking mature and our life more meaningful and worthwhile.";
 
 const words = lorem.split(" ");
 
 const initialState: TextPromptState = {
   active: false,
+  wpm: 0,
   timer: 60,
   words: words,
-  telemetry: words.map((word) => word.split("").map((char) => ({ char }))),
+  telemetry: {
+    numCorrect: 0,
+    numErrors: 0,
+    history: words.reduce(
+      (wordAcc, word, wordIndex) => ({
+        ...wordAcc,
+        [wordIndex]: word
+          .split("")
+          .reduce(
+            (charAcc, char, charIndex) => ({ ...charAcc, [charIndex]: char }),
+            {}
+          ),
+      }),
+      {}
+    ),
+  },
   userInput: "",
   currentWordIndex: 0,
   currentCharIndex: 0,
@@ -182,7 +209,6 @@ const initialState: TextPromptState = {
 };
 
 enum TEXT_PROMPT_ACTIONS {
-  KEY_PRESS = "KEY_PRESS",
   MOVE_CARET = "MOVE_CARET",
   NEXT_WORD = "NEXT_WORD",
   INPUT_CHANGE = "INPUT_CHANGE",
@@ -203,13 +229,6 @@ interface TextPromptTimerResetAction {
   type: TEXT_PROMPT_ACTIONS.RESET;
 }
 
-interface TextPromptKeyPressAction {
-  type: TEXT_PROMPT_ACTIONS.KEY_PRESS;
-  payload: {
-    key: string;
-    rtt: number;
-  };
-}
 interface TextPromptMoveCaretAction {
   type: TEXT_PROMPT_ACTIONS.MOVE_CARET;
   payload: {
@@ -226,6 +245,8 @@ interface TextPromptInputChangeAction {
   payload: {
     value: string;
     selectionIndex: number;
+    key?: string;
+    rtt?: number;
   };
 }
 
@@ -233,7 +254,6 @@ type TextPromptAction =
   | TextPromptStartAction
   | TextPromptTimerTickAction
   | TextPromptTimerResetAction
-  | TextPromptKeyPressAction
   | TextPromptMoveCaretAction
   | TextPromptNextWordAction
   | TextPromptInputChangeAction;
@@ -255,7 +275,13 @@ const reducer = (
         };
       }
 
-      return { ...state, timer: state.timer - 1 };
+      return {
+        ...state,
+        wpm:
+          (state.telemetry.numCorrect / 5 - state.telemetry.numErrors) /
+          ((initialState.timer - state.timer) / 60),
+        timer: state.timer - 1,
+      };
     }
     case TEXT_PROMPT_ACTIONS.MOVE_CARET:
       return { ...state, currentCharIndex: action.payload.selectionIndex };
@@ -266,26 +292,69 @@ const reducer = (
         currentWordIndex: state.currentWordIndex + 1,
         currentCharIndex: 0,
       };
-    case TEXT_PROMPT_ACTIONS.KEY_PRESS: {
+    case TEXT_PROMPT_ACTIONS.INPUT_CHANGE: {
+      if (!action.payload.key) {
+        //assume backspace
+        const currentCharCorrect =
+          state.telemetry.history[state.currentWordIndex][
+            action.payload.selectionIndex
+          ].correct;
+
+        if (currentCharCorrect === undefined) {
+          return {
+            ...state,
+            userInput: action.payload.value,
+            currentCharIndex: action.payload.selectionIndex,
+          };
+        } else {
+          const numCorrect = currentCharCorrect
+            ? state.telemetry.numCorrect - 1
+            : state.telemetry.numCorrect;
+
+          const numErrors = !currentCharCorrect
+            ? state.telemetry.numErrors - 1
+            : state.telemetry.numErrors;
+
+          return {
+            ...state,
+            userInput: action.payload.value,
+            currentCharIndex: action.payload.selectionIndex,
+            telemetry: {
+              numCorrect,
+              numErrors,
+              history: { ...state.telemetry.history },
+            },
+          };
+        }
+      }
       const correctChar = state.words[state.currentWordIndex].charAt(
         state.currentCharIndex
       );
-      const copy = [...state.telemetry];
-      copy[state.currentWordIndex][state.currentCharIndex] = {
-        ...copy[state.currentWordIndex][state.currentCharIndex],
+      const history = { ...state.telemetry.history };
+      history[state.currentWordIndex][state.currentCharIndex] = {
+        ...history[state.currentWordIndex][state.currentCharIndex],
         correct: action.payload.key === correctChar,
         rtt: action.payload.rtt,
       };
-      return {
-        ...state,
-        telemetry: copy,
-      };
-    }
-    case TEXT_PROMPT_ACTIONS.INPUT_CHANGE: {
+
+      const numCorrect =
+        action.payload.key === correctChar
+          ? state.telemetry.numCorrect + 1
+          : state.telemetry.numCorrect;
+
+      const numErrors =
+        action.payload.key !== correctChar
+          ? state.telemetry.numErrors + 1
+          : state.telemetry.numErrors;
       return {
         ...state,
         userInput: action.payload.value,
         currentCharIndex: action.payload.selectionIndex,
+        telemetry: {
+          numCorrect,
+          numErrors,
+          history,
+        },
       };
     }
     default:
@@ -325,16 +394,16 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
 
   useEffect(() => {
     if (state.active) {
-      const timerTick = setTimeout(
+      const timerTick = setInterval(
         () => dispatch({ type: TEXT_PROMPT_ACTIONS.TIMER_TICK }),
         1000
       );
 
       return () => {
-        clearTimeout(timerTick);
+        clearInterval(timerTick);
       };
     }
-  }, [state.active, state.timer]);
+  }, [state.active]);
 
   const extractCursorRefPosition = useCallback(
     (
@@ -353,55 +422,55 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     []
   );
 
-  const handleKeyUp: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (
-      e.key !== "ArrowLeft" &&
-      e.key !== "ArrowRight" &&
-      e.key !== "ArrowUp" &&
-      e.key !== "ArrowDown"
-    ) {
-      return;
-    }
+  const handleKeyUp: KeyboardEventHandler<HTMLInputElement> = useCallback(
+    (e) => {
+      if (
+        e.key !== "ArrowLeft" &&
+        e.key !== "ArrowRight" &&
+        e.key !== "ArrowUp" &&
+        e.key !== "ArrowDown"
+      ) {
+        return;
+      }
 
-    const target = e.target as HTMLInputElement;
-    const selectionStart = target.selectionStart || 0;
-
-    dispatch({
-      type: TEXT_PROMPT_ACTIONS.MOVE_CARET,
-      payload: { selectionIndex: selectionStart },
-    });
-  };
-
-  const handleKeyPress: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    dispatch({
-      type: TEXT_PROMPT_ACTIONS.KEY_PRESS,
-      payload: {
-        key: e.key,
-        rtt: window.performance.now() - startRTT,
-      },
-    });
-  };
-
-  const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    const target = e.target as HTMLInputElement;
-    const selectionStart = target.selectionStart || 0;
-
-    if (!state.active) {
-      dispatch({ type: TEXT_PROMPT_ACTIONS.START });
-      setStartRTT(window.performance.now());
-    }
-
-    if (target.value.charAt(target.value.length - 1) === " ") {
-      dispatch({ type: TEXT_PROMPT_ACTIONS.NEXT_WORD });
-    } else {
       dispatch({
-        type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
-        payload: { value: target.value, selectionIndex: selectionStart },
+        type: TEXT_PROMPT_ACTIONS.MOVE_CARET,
+        payload: {
+          selectionIndex: (e.target as HTMLInputElement).selectionStart || 0,
+        },
       });
-    }
-    // figure out a better place to start
-    setStartRTT(window.performance.now());
-  };
+    },
+    []
+  );
+
+  const handleChange: ChangeEventHandler<HTMLInputElement> = useCallback(
+    (e) => {
+      const key = (e.nativeEvent as InputEvent).data;
+
+      if (!state.active) {
+        dispatch({ type: TEXT_PROMPT_ACTIONS.START });
+        setStartRTT(window.performance.now());
+      }
+      const target = e.target as HTMLInputElement;
+      const selectionStart = target.selectionStart || 0;
+
+      if (target.value.charAt(target.value.length - 1) === " ") {
+        dispatch({ type: TEXT_PROMPT_ACTIONS.NEXT_WORD });
+      } else {
+        dispatch({
+          type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
+          payload: {
+            value: target.value,
+            selectionIndex: selectionStart,
+            key: key === null ? undefined : key,
+            rtt: window.performance.now() - startRTT,
+          },
+        });
+        setStartRTT(window.performance.now());
+      }
+    },
+    [state.active]
+  );
 
   const onWordRefChange = useCallback(
     (elem, wordIndex) => {
@@ -437,7 +506,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         return theme.textPrompt.textColor;
       } else if (wordIndex < state.currentWordIndex) {
         // previous words
-        return state.telemetry[wordIndex][charIndex].correct
+        return state.telemetry.history[wordIndex][charIndex].correct
           ? theme.textPrompt.correct
           : theme.textPrompt.error;
       } else {
@@ -447,7 +516,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
           return theme.textPrompt.textColor;
         } else if (charIndex < state.currentCharIndex) {
           // previous characters
-          return state.telemetry[wordIndex][charIndex].correct
+          return state.telemetry.history[wordIndex][charIndex].correct
             ? theme.textPrompt.correct
             : theme.textPrompt.error;
         } else {
@@ -456,7 +525,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         }
       }
     },
-    [state, state.currentWordIndex, state.currentCharIndex, state.telemetry]
+    [state.telemetry.history, state.currentWordIndex, state.currentCharIndex]
   );
 
   return (
@@ -488,7 +557,6 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         <InputWrapper>
           <StyledInput
             onKeyUp={handleKeyUp}
-            onKeyPress={handleKeyPress}
             onChange={handleChange}
             value={state.userInput}
             placeholder={state.active ? "" : "Type to start challenge!"}
@@ -506,6 +574,11 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
             Press <KeyCap>Ctrl</KeyCap> + <KeyCap>Space</KeyCap> to restart
           </InputInstruction>
         </InputWrapper>
+        <Timer>
+          {state.wpm < 100 ? "0" : ""}
+          {state.wpm < 10 ? "0" : ""}
+          {state.wpm > 0 ? state.wpm.toFixed(0) : "0"} WPM
+        </Timer>
         <Timer>
           {state.timer < 10 ? "0" : ""}
           {state.timer}
