@@ -37,17 +37,12 @@ const TemplateBox = styled.div`
   color: ${({ theme }) => theme.textPrompt.textColor};
 `;
 
-const TemplateCharacter = styled.span<{ correct: boolean | undefined }>`
+const TemplateCharacter = styled.span<{ color: string }>`
   padding-left: 2px;
   transition: 0.15s all;
   font-size: 1.5rem;
 
-  color: ${({ correct, theme }) =>
-    correct === undefined
-      ? "white"
-      : correct
-      ? theme.textPrompt.correct
-      : theme.textPrompt.error};
+  color: ${({ color }) => color};
 `;
 
 const TemplateWord = styled.span`
@@ -188,6 +183,7 @@ const initialState: TextPromptState = {
 
 enum TEXT_PROMPT_ACTIONS {
   KEY_PRESS = "KEY_PRESS",
+  MOVE_CARET = "MOVE_CARET",
   NEXT_WORD = "NEXT_WORD",
   INPUT_CHANGE = "INPUT_CHANGE",
   TIMER_TICK = "TIMER_TICK",
@@ -214,6 +210,12 @@ interface TextPromptKeyPressAction {
     rtt: number;
   };
 }
+interface TextPromptMoveCaretAction {
+  type: TEXT_PROMPT_ACTIONS.MOVE_CARET;
+  payload: {
+    selectionIndex: number;
+  };
+}
 
 interface TextPromptNextWordAction {
   type: TEXT_PROMPT_ACTIONS.NEXT_WORD;
@@ -232,6 +234,7 @@ type TextPromptAction =
   | TextPromptTimerTickAction
   | TextPromptTimerResetAction
   | TextPromptKeyPressAction
+  | TextPromptMoveCaretAction
   | TextPromptNextWordAction
   | TextPromptInputChangeAction;
 
@@ -254,6 +257,8 @@ const reducer = (
 
       return { ...state, timer: state.timer - 1 };
     }
+    case TEXT_PROMPT_ACTIONS.MOVE_CARET:
+      return { ...state, currentCharIndex: action.payload.selectionIndex };
     case TEXT_PROMPT_ACTIONS.NEXT_WORD:
       return {
         ...state,
@@ -290,7 +295,6 @@ const reducer = (
 
 export const TextPrompt: React.FC<TextPrompt> = () => {
   const theme = useTheme();
-  const [_, setMounted] = useState(false);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
@@ -348,6 +352,25 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     },
     []
   );
+
+  const handleKeyUp: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (
+      e.key !== "ArrowLeft" &&
+      e.key !== "ArrowRight" &&
+      e.key !== "ArrowUp" &&
+      e.key !== "ArrowDown"
+    ) {
+      return;
+    }
+
+    const target = e.target as HTMLInputElement;
+    const selectionStart = target.selectionStart || 0;
+
+    dispatch({
+      type: TEXT_PROMPT_ACTIONS.MOVE_CARET,
+      payload: { selectionIndex: selectionStart },
+    });
+  };
 
   const handleKeyPress: KeyboardEventHandler<HTMLInputElement> = (e) => {
     dispatch({
@@ -407,6 +430,32 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     ? extractCursorRefPosition(wordRef, state.cursor.style, true)
     : null;
 
+  const getCharacterCorrectness = useCallback(
+    (wordIndex: number, charIndex: number) => {
+      if (
+        wordIndex >= state.currentWordIndex &&
+        charIndex >= state.currentCharIndex
+      ) {
+        return theme.textPrompt.textColor;
+      }
+
+      if (state.telemetry[wordIndex][charIndex].correct !== undefined) {
+        return state.telemetry[wordIndex][charIndex].correct
+          ? theme.textPrompt.correct
+          : theme.textPrompt.error;
+      }
+
+      if (wordIndex < state.currentWordIndex) return theme.textPrompt.error;
+
+      if (charIndex > state.currentCharIndex) {
+        return theme.textPrompt.textColor;
+      }
+
+      return theme.textPrompt.textColor;
+    },
+    [state.currentWordIndex, state.currentCharIndex, state.telemetry]
+  );
+
   return (
     <Container>
       <TemplateBox>
@@ -424,14 +473,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
               <TemplateCharacter
                 key={`template-${wIndex}-${cIndex}`}
                 ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
-                correct={
-                  wIndex > state.currentWordIndex
-                    ? undefined
-                    : wIndex === state.currentWordIndex &&
-                      cIndex >= state.currentCharIndex
-                    ? undefined
-                    : state.telemetry[wIndex][cIndex].correct
-                }
+                color={getCharacterCorrectness(wIndex, cIndex)}
               >
                 {character}
               </TemplateCharacter>
@@ -442,6 +484,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
       <ControlBox>
         <InputWrapper>
           <StyledInput
+            onKeyUp={handleKeyUp}
             onKeyPress={handleKeyPress}
             onChange={handleChange}
             value={state.userInput}
