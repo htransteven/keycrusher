@@ -432,28 +432,31 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
 
   const getCharacterCorrectness = useCallback(
     (wordIndex: number, charIndex: number) => {
-      if (
-        wordIndex >= state.currentWordIndex &&
-        charIndex >= state.currentCharIndex
-      ) {
+      if (wordIndex > state.currentWordIndex) {
+        // upcoming words
         return theme.textPrompt.textColor;
-      }
-
-      if (state.telemetry[wordIndex][charIndex].correct !== undefined) {
+      } else if (wordIndex < state.currentWordIndex) {
+        // previous words
         return state.telemetry[wordIndex][charIndex].correct
           ? theme.textPrompt.correct
           : theme.textPrompt.error;
+      } else {
+        //current word
+        if (charIndex > state.currentCharIndex) {
+          // upcoming characters
+          return theme.textPrompt.textColor;
+        } else if (charIndex < state.currentCharIndex) {
+          // previous characters
+          return state.telemetry[wordIndex][charIndex].correct
+            ? theme.textPrompt.correct
+            : theme.textPrompt.error;
+        } else {
+          //current character
+          return theme.textPrompt.textColor;
+        }
       }
-
-      if (wordIndex < state.currentWordIndex) return theme.textPrompt.error;
-
-      if (charIndex > state.currentCharIndex) {
-        return theme.textPrompt.textColor;
-      }
-
-      return theme.textPrompt.textColor;
     },
-    [state.currentWordIndex, state.currentCharIndex, state.telemetry]
+    [state, state.currentWordIndex, state.currentCharIndex, state.telemetry]
   );
 
   return (
