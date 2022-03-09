@@ -18,7 +18,7 @@ const Cursor = styled.div`
   position: absolute;
   background-color: ${({ theme }) => theme.textPrompt.cursorColor};
 
-  transition: 0.15s all;
+  transition: 0.1s all;
 `;
 
 const TemplateBox = styled.div`
@@ -277,9 +277,10 @@ const reducer = (
 
       return {
         ...state,
-        wpm:
+        wpm: Math.round(
           (state.telemetry.numCorrect / 5 - state.telemetry.numErrors) /
-          ((initialState.timer - state.timer) / 60),
+            ((initialState.timer - state.timer) / 60)
+        ),
         timer: state.timer - 1,
       };
     }
@@ -532,7 +533,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     <Container>
       <TemplateBox>
         {cursorPosition &&
-          state.currentCharIndex <
+          state.currentCharIndex <=
             state.words[state.currentWordIndex].length && (
             <Cursor style={cursorPosition} />
           )}
@@ -577,7 +578,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         <Timer>
           {state.wpm < 100 ? "0" : ""}
           {state.wpm < 10 ? "0" : ""}
-          {state.wpm > 0 ? state.wpm.toFixed(0) : "0"} WPM
+          {state.wpm > 0 ? state.wpm : "0"} WPM
         </Timer>
         <Timer>
           {state.timer < 10 ? "0" : ""}
