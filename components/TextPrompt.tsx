@@ -275,6 +275,7 @@ const reducer = (
         };
       }
 
+      // subtract the number of errors for a harsher WPM
       return {
         ...state,
         wpm: Math.round(
