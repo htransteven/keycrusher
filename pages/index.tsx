@@ -3,7 +3,10 @@ import Head from "next/head";
 import styled from "styled-components";
 import { TextPrompt } from "../components/TextPrompt";
 
-const PageWrapper = styled.div``;
+const PageWrapper = styled.div`
+  padding: 0 15vw;
+  padding-top: 10vh;
+`;
 
 const Home: NextPage = () => {
   return (

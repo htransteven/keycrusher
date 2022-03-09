@@ -9,18 +9,15 @@ const GlobalStyle = createGlobalStyle`
     box-sizing: border-box;
     margin:0;
     padding: 0;
+    background-color: ${({ theme }) => theme.htmlBackgroundColor};
   }
 
   * {
     font-family: 'Roboto', sans-serif;
   }
 
-  span, textarea {
-    font-size: 14px;
-  }
-
-  textarea {
-    padding: 0;
+  span, input {
+    font-size: 16px;
   }
 `;
 

@@ -1,3 +1,4 @@
+import { stat } from "fs";
 import React, {
   ChangeEventHandler,
   KeyboardEventHandler,
@@ -6,13 +7,135 @@ import React, {
   useReducer,
   useState,
 } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
+import ResetIcon from "../assets/arrows-rotate-solid.svg";
 
 const Container = styled.div`
   position: relative;
-  overflow: hidden;
-  padding: 10px;
 `;
+
+const Cursor = styled.div`
+  position: absolute;
+  background-color: ${({ theme }) => theme.textPrompt.cursorColor};
+
+  transition: 0.15s all;
+`;
+
+const TemplateBox = styled.div`
+  position: relative;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  padding: 20px;
+  margin-bottom: 10px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  background-color: ${({ theme }) => theme.textPrompt.backgroundColor};
+  color: ${({ theme }) => theme.textPrompt.textColor};
+`;
+
+const TemplateCharacter = styled.span<{ correct: boolean | undefined }>`
+  padding-left: 2px;
+  transition: 0.15s all;
+  font-size: 1.5rem;
+
+  color: ${({ correct, theme }) =>
+    correct === undefined
+      ? "white"
+      : correct
+      ? theme.textPrompt.correct
+      : theme.textPrompt.error};
+`;
+
+const TemplateWord = styled.span`
+  & > ${TemplateCharacter}:last-of-type {
+    padding-right: 2px;
+  }
+`;
+
+const ControlBox = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-gap: 10px;
+`;
+
+const InputWrapper = styled.div`
+  position: relative;
+`;
+
+const StyledInput = styled.input`
+  font-size: 1.5rem;
+  height: 100%;
+  width: 100%;
+  outline: none;
+  border: none;
+  padding: 20px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+
+  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
+  color: ${({ theme }) => theme.textPrompt.textColor};
+
+  &:disabled {
+    opacity: 0.5;
+  }
+`;
+
+const InputInstruction = styled.div`
+  font-size: 0.8rem;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: ${({ theme }) => theme.textPrompt.input.instructions.textColor};
+`;
+
+const KeyCap = styled.span`
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 3px;
+  background-color: ${({ theme }) =>
+    theme.textPrompt.input.instructions.keyCap.backgroundColor};
+  color: ${({ theme }) => theme.textPrompt.input.instructions.keyCap.textColor};
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+`;
+
+const Timer = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  padding: 20px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+
+  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
+  color: ${({ theme }) => theme.textPrompt.textColor};
+`;
+
+const IconWrapper = styled.div`
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  color: ${({ theme }) => theme.textPrompt.textColor};
+  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
+`;
+
+interface TextPrompt {}
 
 type CursorStyle = "line" | "block";
 
@@ -24,42 +147,17 @@ interface CursorPosition {
   height: number;
 }
 
-const Cursor = styled.div`
-  position: absolute;
-  background-color: red;
-
-  transition: 0.1s all;
-`;
-
-const TemplateBox = styled.div`
-  position: relative;
-  display: flex;
-  flex-flow: row wrap;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 0.35rem;
-`;
-
-const TemplateWord = styled.span``;
-const TemplateCharacter = styled.span<{ correct: boolean | null }>`
-  background-color: ${({ correct }) =>
-    correct === null
-      ? "transparent"
-      : correct
-      ? "rgba(0,150,0,0.5)"
-      : "rgba(150,0,0,0.2)"};
-`;
-
-const StyledInput = styled.input`
-  height: 100%;
-  width: 100%;
-`;
-
-interface TextPrompt {}
+interface KeyTelemetry {
+  char: string;
+  rtt?: number;
+  correct?: boolean;
+}
 
 interface TextPromptState {
+  active: boolean;
+  timer: number;
   words: string[];
-  accuracyArray: (boolean | null)[][];
+  telemetry: KeyTelemetry[][];
   userInput: string;
   currentWordIndex: number;
   currentCharIndex: number;
@@ -72,8 +170,10 @@ const lorem =
 const words = lorem.split(" ");
 
 const initialState: TextPromptState = {
+  active: false,
+  timer: 60,
   words: words,
-  accuracyArray: words.map((word) => word.split("").map(() => null)),
+  telemetry: words.map((word) => word.split("").map((char) => ({ char }))),
   userInput: "",
   currentWordIndex: 0,
   currentCharIndex: 0,
@@ -90,12 +190,28 @@ enum TEXT_PROMPT_ACTIONS {
   KEY_PRESS = "KEY_PRESS",
   NEXT_WORD = "NEXT_WORD",
   INPUT_CHANGE = "INPUT_CHANGE",
+  TIMER_TICK = "TIMER_TICK",
+  START = "START",
+  RESET = "RESET",
+}
+
+interface TextPromptTimerTickAction {
+  type: TEXT_PROMPT_ACTIONS.TIMER_TICK;
+}
+
+interface TextPromptStartAction {
+  type: TEXT_PROMPT_ACTIONS.START;
+}
+
+interface TextPromptTimerResetAction {
+  type: TEXT_PROMPT_ACTIONS.RESET;
 }
 
 interface TextPromptKeyPressAction {
   type: TEXT_PROMPT_ACTIONS.KEY_PRESS;
   payload: {
     key: string;
+    rtt: number;
   };
 }
 
@@ -110,7 +226,11 @@ interface TextPromptInputChangeAction {
     selectionIndex: number;
   };
 }
+
 type TextPromptAction =
+  | TextPromptStartAction
+  | TextPromptTimerTickAction
+  | TextPromptTimerResetAction
   | TextPromptKeyPressAction
   | TextPromptNextWordAction
   | TextPromptInputChangeAction;
@@ -120,6 +240,20 @@ const reducer = (
   action: TextPromptAction
 ): TextPromptState => {
   switch (action.type) {
+    case TEXT_PROMPT_ACTIONS.START:
+      return { ...state, active: true };
+    case TEXT_PROMPT_ACTIONS.RESET:
+      return { ...initialState };
+    case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
+      if (state.timer <= 0) {
+        return {
+          ...state,
+          active: false,
+        };
+      }
+
+      return { ...state, timer: state.timer - 1 };
+    }
     case TEXT_PROMPT_ACTIONS.NEXT_WORD:
       return {
         ...state,
@@ -131,12 +265,15 @@ const reducer = (
       const correctChar = state.words[state.currentWordIndex].charAt(
         state.currentCharIndex
       );
-      const copy = [...state.accuracyArray];
-      copy[state.currentWordIndex][state.currentCharIndex] =
-        action.payload.key === correctChar;
+      const copy = [...state.telemetry];
+      copy[state.currentWordIndex][state.currentCharIndex] = {
+        ...copy[state.currentWordIndex][state.currentCharIndex],
+        correct: action.payload.key === correctChar,
+        rtt: action.payload.rtt,
+      };
       return {
         ...state,
-        accuracyArray: copy,
+        telemetry: copy,
       };
     }
     case TEXT_PROMPT_ACTIONS.INPUT_CHANGE: {
@@ -152,18 +289,48 @@ const reducer = (
 };
 
 export const TextPrompt: React.FC<TextPrompt> = () => {
+  const theme = useTheme();
   const [_, setMounted] = useState(false);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
+  const [startRTT, setStartRTT] = useState(0);
+  const [resetSpinCounter, setResetSpinCounter] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
+    const handleGlobalReset = (e: KeyboardEvent) => {
+      if (!e.ctrlKey) return;
+
+      switch (e.key) {
+        case " ": {
+          dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
+          setResetSpinCounter((prev) => prev + 1);
+        }
+        default: {
+          return;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalReset);
 
     return () => {
-      setMounted(false);
+      window.removeEventListener("keydown", handleGlobalReset);
     };
   }, []);
+
+  useEffect(() => {
+    if (state.active) {
+      const timerTick = setTimeout(
+        () => dispatch({ type: TEXT_PROMPT_ACTIONS.TIMER_TICK }),
+        1000
+      );
+
+      return () => {
+        clearTimeout(timerTick);
+      };
+    }
+  }, [state.active, state.timer]);
 
   const extractCursorRefPosition = useCallback(
     (
@@ -175,7 +342,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         style,
         top: elem.offsetTop,
         left: endOfWord ? elem.offsetWidth + elem.offsetLeft : elem.offsetLeft,
-        width: style === "block" ? elem.offsetWidth : 1,
+        width: style === "block" ? elem.offsetWidth : 2,
         height: elem.offsetHeight,
       };
     },
@@ -183,12 +350,11 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
   );
 
   const handleKeyPress: KeyboardEventHandler<HTMLInputElement> = (e) => {
-    console.log(e);
-    const target = e.target as HTMLInputElement;
     dispatch({
       type: TEXT_PROMPT_ACTIONS.KEY_PRESS,
       payload: {
         key: e.key,
+        rtt: window.performance.now() - startRTT,
       },
     });
   };
@@ -196,6 +362,12 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
   const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     const target = e.target as HTMLInputElement;
     const selectionStart = target.selectionStart || 0;
+
+    if (!state.active) {
+      dispatch({ type: TEXT_PROMPT_ACTIONS.START });
+      setStartRTT(window.performance.now());
+    }
+
     if (target.value.charAt(target.value.length - 1) === " ") {
       dispatch({ type: TEXT_PROMPT_ACTIONS.NEXT_WORD });
     } else {
@@ -204,6 +376,8 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         payload: { value: target.value, selectionIndex: selectionStart },
       });
     }
+    // figure out a better place to start
+    setStartRTT(window.performance.now());
   };
 
   const onWordRefChange = useCallback(
@@ -233,14 +407,14 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     ? extractCursorRefPosition(wordRef, state.cursor.style, true)
     : null;
 
-  console.log(state);
-  //   console.log(wordRef, charRef);
-  //   console.log(cursorPosition);
-
   return (
     <Container>
       <TemplateBox>
-        {cursorPosition && <Cursor style={cursorPosition} />}
+        {cursorPosition &&
+          state.currentCharIndex <
+            state.words[state.currentWordIndex].length && (
+            <Cursor style={cursorPosition} />
+          )}
         {state.words.map((word, wIndex) => (
           <TemplateWord
             key={`template-${wIndex}`}
@@ -252,11 +426,11 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
                 ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
                 correct={
                   wIndex > state.currentWordIndex
-                    ? null
+                    ? undefined
                     : wIndex === state.currentWordIndex &&
                       cIndex >= state.currentCharIndex
-                    ? null
-                    : state.accuracyArray[wIndex][cIndex]
+                    ? undefined
+                    : state.telemetry[wIndex][cIndex].correct
                 }
               >
                 {character}
@@ -265,13 +439,47 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
           </TemplateWord>
         ))}
       </TemplateBox>
-      <form>
-        <StyledInput
-          onKeyPress={handleKeyPress}
-          onChange={handleChange}
-          value={state.userInput}
-        />
-      </form>
+      <ControlBox>
+        <InputWrapper>
+          <StyledInput
+            onKeyPress={handleKeyPress}
+            onChange={handleChange}
+            value={state.userInput}
+            placeholder={state.active ? "" : "Type to start challenge!"}
+            disabled={state.timer === 0}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck="false"
+            autoCapitalize="off"
+          />
+          <InputInstruction
+            style={{
+              display: !state.active ? "" : "none",
+            }}
+          >
+            Press <KeyCap>Ctrl</KeyCap> + <KeyCap>Space</KeyCap> to restart
+          </InputInstruction>
+        </InputWrapper>
+        <Timer>
+          {state.timer < 10 ? "0" : ""}
+          {state.timer}
+        </Timer>
+        <IconWrapper
+          onClick={() => {
+            dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
+            setResetSpinCounter((prev) => prev + 1);
+          }}
+        >
+          <ResetIcon
+            style={{
+              height: "100%",
+              width: "100%",
+              transition: "0.3s all",
+              transform: `rotate(calc(180deg * ${resetSpinCounter}))`,
+            }}
+          />
+        </IconWrapper>
+      </ControlBox>
     </Container>
   );
 };
