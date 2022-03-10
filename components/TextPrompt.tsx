@@ -165,6 +165,7 @@ interface TextPromptState {
   teleprompt: {
     elem: HTMLDivElement | null;
     scrollOffsetY: number;
+    needsMoreWords: boolean;
   };
   telemetry: {
     numCorrect: number;
@@ -181,35 +182,20 @@ interface TextPromptState {
   cursor: CursorPosition;
 }
 
-const lorem =
-  "Studying is the main source of knowledge. Books are indeed never failing friends of man. For a mature mind, reading is the greatest source of pleasure and solace to distressed minds. The study of good books ennobles us and broadens our outlook. Therefore, the habit of reading should be cultivated. A student should never confine himself to his schoolbooks only. He should not miss the pleasure locked in the classics, poetry, drama, history, philosophy etc. We can derive benefit from other’s experiences with the help of books. The various sufferings, endurance and joy described in books enable us to have a closer look at human life. They also inspire us to face the hardships of life courageously. Nowadays there are innumerable books and time is scarce. So we should read only the best and the greatest among them. With the help of books we shall be able to make our thinking mature and our life more meaningful and worthwhile.";
-
-const words = lorem.split(" ");
-
 const initialState: TextPromptState = {
   active: false,
   wpm: 0,
   timer: 60,
-  words: words,
+  words: [],
   teleprompt: {
     elem: null,
     scrollOffsetY: 0,
+    needsMoreWords: true,
   },
   telemetry: {
     numCorrect: 0,
     numErrors: 0,
-    history: words.reduce(
-      (wordAcc, word, wordIndex) => ({
-        ...wordAcc,
-        [wordIndex]: word
-          .split("")
-          .reduce(
-            (charAcc, char, charIndex) => ({ ...charAcc, [charIndex]: char }),
-            {}
-          ),
-      }),
-      {}
-    ),
+    history: {},
   },
   userInput: "",
   currentWordIndex: 0,
@@ -224,6 +210,7 @@ const initialState: TextPromptState = {
 };
 
 enum TEXT_PROMPT_ACTIONS {
+  ADD_WORDS = "ADD_WORDS",
   MOVE_CARET = "MOVE_CARET",
   NEXT_WORD = "NEXT_WORD",
   INPUT_CHANGE = "INPUT_CHANGE",
@@ -254,6 +241,13 @@ interface TextPromptMoveCaretAction {
   };
 }
 
+interface TextPromptAddWordsAction {
+  type: TEXT_PROMPT_ACTIONS.ADD_WORDS;
+  payload: {
+    words: string[];
+  };
+}
+
 interface TextPromptNextWordAction {
   type: TEXT_PROMPT_ACTIONS.NEXT_WORD;
   payload: {
@@ -273,6 +267,7 @@ interface TextPromptInputChangeAction {
 }
 
 type TextPromptAction =
+  | TextPromptAddWordsAction
   | TextPromptStartAction
   | TextPromptTimerTickAction
   | TextPromptTimerResetAction
@@ -317,6 +312,35 @@ const reducer = (
     }
     case TEXT_PROMPT_ACTIONS.MOVE_CARET:
       return { ...state, currentCharIndex: action.payload.selectionIndex };
+    case TEXT_PROMPT_ACTIONS.ADD_WORDS:
+      const baseWordIndex = Object.keys(state.telemetry.history).length;
+      return {
+        ...state,
+        teleprompt: {
+          ...state.teleprompt,
+          needsMoreWords: false,
+        },
+        words: [...state.words, ...action.payload.words],
+        telemetry: {
+          ...state.telemetry,
+          history: {
+            ...state.telemetry.history,
+            ...action.payload.words.reduce(
+              (wordAcc, word, wordIndex) => ({
+                ...wordAcc,
+                [baseWordIndex + wordIndex]: word.split("").reduce(
+                  (charAcc, char, charIndex) => ({
+                    ...charAcc,
+                    [charIndex]: char,
+                  }),
+                  {}
+                ),
+              }),
+              {}
+            ),
+          },
+        },
+      };
     case TEXT_PROMPT_ACTIONS.NEXT_WORD: {
       console.log(action.payload.nextWordElem?.offsetTop);
       if (
@@ -330,6 +354,7 @@ const reducer = (
           teleprompt: {
             ...state.teleprompt,
             scrollOffsetY: action.payload.nextWordElem?.offsetTop,
+            needsMoreWords: true,
           },
           userInput: "",
           currentWordIndex: state.currentWordIndex + 1,
@@ -460,6 +485,27 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
       };
     }
   }, [state.active]);
+
+  useEffect(() => {
+    if (!state.teleprompt.needsMoreWords) return;
+    const getMoreWords = async () => {
+      const res = await fetch("/api/words");
+
+      if (!res.ok) {
+        console.log("failed to get more words");
+        return;
+      }
+
+      dispatch({
+        type: TEXT_PROMPT_ACTIONS.ADD_WORDS,
+        payload: {
+          words: (await res.json()) as string[],
+        },
+      });
+    };
+
+    getMoreWords();
+  }, [state.teleprompt.needsMoreWords]);
 
   const extractCursorRefPosition = useCallback(
     (
