@@ -12,7 +12,7 @@ const Home: NextPage = () => {
   return (
     <PageWrapper>
       <Head>
-        <title>Speed Typer</title>
+        <title>Key Crusher</title>
         <meta
           name="description"
           content="A simple and fun speed typing application :)"

@@ -3,14 +3,13 @@ import { Analytics, getAnalytics } from "firebase/analytics";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAQyzr0-6NUCsnJ28ruwSQehp-ciNlAYcs",
-  authDomain: "speed-typer-io.firebaseapp.com",
-  databaseURL: "https://speed-typer-io-default-rtdb.firebaseio.com",
-  projectId: "speed-typer-io",
-  storageBucket: "speed-typer-io.appspot.com",
-  messagingSenderId: "128695633430",
-  appId: "1:128695633430:web:948c278b4fde0924aad737",
-  measurementId: "G-Y6HQB920BN",
+  apiKey: "AIzaSyDcrT1jyxO17nfGPOwwFrvLTMCM_a290J4",
+  authDomain: "key-crusher.firebaseapp.com",
+  projectId: "key-crusher",
+  storageBucket: "key-crusher.appspot.com",
+  messagingSenderId: "141071597239",
+  appId: "1:141071597239:web:3d7e2d21ae63156b6bd732",
+  measurementId: "G-H6G2WP19PZ",
 };
 
 interface FirebaseContext {
