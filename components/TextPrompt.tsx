@@ -10,6 +10,8 @@ import React, {
 import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
 
+const WORD_GAP = "0.35rem";
+
 const Container = styled.div`
   position: relative;
 `;
@@ -29,7 +31,7 @@ const TemplateBox = styled.div`
   flex-flow: row wrap;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 0.35rem;
+  gap: ${WORD_GAP};
   padding: 20px;
   margin-bottom: 10px;
   border-radius: 3px;
@@ -138,10 +140,10 @@ type CursorStyle = "line" | "block";
 
 interface CursorPosition {
   style: CursorStyle;
-  top: number;
-  left: number;
-  width: number;
-  height: number;
+  top: number | string;
+  left: number | string;
+  width: number | string;
+  height: number | string;
 }
 
 interface KeyTelemetry {
@@ -200,7 +202,7 @@ const initialState: TextPromptState = {
   currentWordIndex: 0,
   currentCharIndex: 0,
   cursor: {
-    style: "line",
+    style: "block",
     top: 0,
     left: 0,
     width: 0,
@@ -417,7 +419,8 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         style,
         top: elem.offsetTop,
         left: endOfWord ? elem.offsetWidth + elem.offsetLeft : elem.offsetLeft,
-        width: style === "block" ? elem.offsetWidth : 2,
+        width:
+          style === "block" ? (endOfWord ? WORD_GAP : elem.offsetWidth) : 2,
         height: elem.offsetHeight,
       };
     },
