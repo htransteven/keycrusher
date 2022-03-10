@@ -11,22 +11,24 @@ export default function handler(
 ) {
   switch (req.method) {
     case "GET": {
-      const { count = 25, maxWordLength = 8 } = req.query;
+      const { count = 30, maxWordLength = 8 } = req.query;
       try {
         const wordCount = parseInt(count as string, 10);
         const wordMap: { [wordIndex: string | number]: string } = {};
+        const result = [];
         for (let i = 0; i < wordCount; i++) {
-          let wordIndex = Math.floor(Math.random() * words.length - 1);
+          let wordIndex = Math.floor(Math.random() * (words.length - 1));
           while (
             wordMap[wordIndex] !== undefined ||
-            words[wordIndex].length > maxWordLength
+            wordMap[wordIndex]?.length > maxWordLength
           ) {
-            wordIndex = Math.floor(Math.random() * words.length - 1);
+            wordIndex = Math.floor(Math.random() * (words.length - 1));
           }
+
+          result.push(words[wordIndex]);
           wordMap[wordIndex] = words[wordIndex];
         }
-        console.log(Object.keys(wordMap).map((key) => wordMap[key]));
-        res.status(200).json(Object.keys(wordMap).map((key) => wordMap[key]));
+        res.status(200).json(result);
       } catch (e) {
         console.log(e);
         res.status(400);

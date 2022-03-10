@@ -1,10 +1,10 @@
-import { stat } from "fs";
 import React, {
   ChangeEventHandler,
   KeyboardEventHandler,
   useCallback,
   useEffect,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import styled, { useTheme } from "styled-components";
@@ -34,8 +34,7 @@ const TemplateBoxWrapper = styled.div`
 `;
 
 const TemplateBox = styled.div`
-  max-height: calc((2 * ${FONT_SIZE}) + 15px);
-  height: 100%;
+  height: calc((2 * ${FONT_SIZE}) + 15px);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -161,11 +160,12 @@ interface TextPromptState {
   active: boolean;
   wpm: number;
   timer: number;
-  words: string[];
   teleprompt: {
     elem: HTMLDivElement | null;
     scrollOffsetY: number;
-    needsMoreWords: boolean;
+    fetchWords: number;
+    lineStartWordIndex: number;
+    totalWords: number;
   };
   telemetry: {
     numCorrect: number;
@@ -182,15 +182,16 @@ interface TextPromptState {
   cursor: CursorPosition;
 }
 
-const initialState: TextPromptState = {
+const INITIAL_STATE: TextPromptState = {
   active: false,
   wpm: 0,
   timer: 60,
-  words: [],
   teleprompt: {
     elem: null,
     scrollOffsetY: 0,
-    needsMoreWords: true,
+    fetchWords: 50,
+    lineStartWordIndex: 0,
+    totalWords: 0,
   },
   telemetry: {
     numCorrect: 0,
@@ -290,7 +291,7 @@ const reducer = (
         active: true,
       };
     case TEXT_PROMPT_ACTIONS.RESET:
-      return { ...initialState };
+      return { ...INITIAL_STATE };
     case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
       if (state.timer <= 0) {
         return {
@@ -305,7 +306,7 @@ const reducer = (
         wpm: Math.round(
           state.telemetry.numCorrect /
             5 /
-            ((initialState.timer - state.timer) / 60)
+            ((INITIAL_STATE.timer - state.timer) / 60)
         ),
         timer: state.timer - 1,
       };
@@ -318,9 +319,9 @@ const reducer = (
         ...state,
         teleprompt: {
           ...state.teleprompt,
-          needsMoreWords: false,
+          totalWords: state.teleprompt.totalWords + action.payload.words.length,
+          fetchWords: 0,
         },
-        words: [...state.words, ...action.payload.words],
         telemetry: {
           ...state.telemetry,
           history: {
@@ -331,7 +332,7 @@ const reducer = (
                 [baseWordIndex + wordIndex]: word.split("").reduce(
                   (charAcc, char, charIndex) => ({
                     ...charAcc,
-                    [charIndex]: char,
+                    [charIndex]: { char },
                   }),
                   {}
                 ),
@@ -354,7 +355,11 @@ const reducer = (
           teleprompt: {
             ...state.teleprompt,
             scrollOffsetY: action.payload.nextWordElem?.offsetTop,
-            needsMoreWords: true,
+            fetchWords: Math.floor(
+              (state.currentWordIndex - state.teleprompt.lineStartWordIndex) *
+                1.5
+            ),
+            lineStartWordIndex: state.currentWordIndex + 1,
           },
           userInput: "",
           currentWordIndex: state.currentWordIndex + 1,
@@ -404,9 +409,10 @@ const reducer = (
           };
         }
       }
-      const correctChar = state.words[state.currentWordIndex].charAt(
-        state.currentCharIndex
-      );
+
+      const correctChar =
+        state.telemetry.history[state.currentWordIndex][state.currentCharIndex]
+          .char;
       const history = { ...state.telemetry.history };
       history[state.currentWordIndex][state.currentCharIndex] = {
         ...history[state.currentWordIndex][state.currentCharIndex],
@@ -441,10 +447,11 @@ const reducer = (
 
 export const TextPrompt: React.FC<TextPrompt> = () => {
   const theme = useTheme();
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const [telepromptRef, setTelepromptRef] = useState<HTMLDivElement | null>(
     null
   );
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
   const [nextWordRef, setNextWordRef] = useState<HTMLSpanElement | null>(null);
@@ -458,6 +465,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
       switch (e.key) {
         case " ": {
           dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
+          setTimeout(() => inputRef?.current?.focus(), 100);
           setResetSpinCounter((prev) => prev + 1);
         }
         default: {
@@ -471,7 +479,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     return () => {
       window.removeEventListener("keydown", handleGlobalReset);
     };
-  }, []);
+  }, [inputRef.current]);
 
   useEffect(() => {
     if (state.active) {
@@ -487,9 +495,12 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
   }, [state.active]);
 
   useEffect(() => {
-    if (!state.teleprompt.needsMoreWords) return;
+    if (state.teleprompt.fetchWords === 0) return;
+
     const getMoreWords = async () => {
-      const res = await fetch("/api/words");
+      const res = await fetch(
+        `/api/words?count=${state.teleprompt.fetchWords}`
+      );
 
       if (!res.ok) {
         console.log("failed to get more words");
@@ -505,7 +516,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     };
 
     getMoreWords();
-  }, [state.teleprompt.needsMoreWords]);
+  }, [state.teleprompt.fetchWords]);
 
   const extractCursorRefPosition = useCallback(
     (
@@ -549,7 +560,6 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
   const handleChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const key = (e.nativeEvent as InputEvent).data;
-
       if (!state.active) {
         if (!telepromptRef) return;
         dispatch({
@@ -562,6 +572,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
       const selectionStart = target.selectionStart || 0;
 
       if (target.value.charAt(target.value.length - 1) === " ") {
+        if (target.value === " ") return;
         dispatch({
           type: TEXT_PROMPT_ACTIONS.NEXT_WORD,
           payload: {
@@ -569,6 +580,11 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
             nextWordElem: nextWordRef,
           },
         });
+      } else if (
+        target.value.length >
+        Object.keys(state.telemetry.history[state.currentWordIndex]).length
+      ) {
+        return;
       } else {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
@@ -644,40 +660,37 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     [state.telemetry.history, state.currentWordIndex, state.currentCharIndex]
   );
 
-  if (telepromptRef) {
-    telepromptRef.scrollTop = state.teleprompt.scrollOffsetY;
-  }
-
   return (
     <Container>
       <TemplateBoxWrapper>
         <TemplateBox ref={(node) => setTelepromptRef(node)}>
-          {cursorPosition &&
-            state.currentCharIndex <=
-              state.words[state.currentWordIndex].length && (
-              <Cursor style={cursorPosition} />
-            )}
-          {state.words.map((word, wIndex) => (
-            <TemplateWord
-              key={`template-${wIndex}`}
-              ref={(elem) => onWordRefChange(elem, wIndex)}
-            >
-              {word.split("").map((character, cIndex) => (
-                <TemplateCharacter
-                  key={`template-${wIndex}-${cIndex}`}
-                  ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
-                  color={getCharacterCorrectness(wIndex, cIndex)}
-                >
-                  {character}
-                </TemplateCharacter>
-              ))}
-            </TemplateWord>
-          ))}
+          {cursorPosition && <Cursor style={cursorPosition} />}
+          {Object.keys(state.telemetry.history).map((wKey, wIndex) =>
+            wIndex >= state.teleprompt.lineStartWordIndex ? (
+              <TemplateWord
+                key={`template-${wIndex}`}
+                ref={(elem) => onWordRefChange(elem, wIndex)}
+              >
+                {Object.keys(state.telemetry.history[wKey]).map(
+                  (cKey, cIndex) => (
+                    <TemplateCharacter
+                      key={`template-${wIndex}-${cIndex}`}
+                      ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
+                      color={getCharacterCorrectness(wIndex, cIndex)}
+                    >
+                      {state.telemetry.history[wKey][cKey].char}
+                    </TemplateCharacter>
+                  )
+                )}
+              </TemplateWord>
+            ) : null
+          )}
         </TemplateBox>
       </TemplateBoxWrapper>
       <ControlBox>
         <InputWrapper>
           <StyledInput
+            ref={inputRef}
             onKeyUp={handleKeyUp}
             onChange={handleChange}
             value={state.userInput}
