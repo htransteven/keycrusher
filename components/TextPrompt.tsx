@@ -165,7 +165,6 @@ interface TextPromptState {
     scrollOffsetY: number;
     fetchWords: number;
     lineStartWordIndex: number;
-    totalWords: number;
   };
   telemetry: {
     numCorrect: number;
@@ -191,7 +190,6 @@ const INITIAL_STATE: TextPromptState = {
     scrollOffsetY: 0,
     fetchWords: 50,
     lineStartWordIndex: 0,
-    totalWords: 0,
   },
   telemetry: {
     numCorrect: 0,
@@ -319,7 +317,6 @@ const reducer = (
         ...state,
         teleprompt: {
           ...state.teleprompt,
-          totalWords: state.teleprompt.totalWords + action.payload.words.length,
           fetchWords: 0,
         },
         telemetry: {
