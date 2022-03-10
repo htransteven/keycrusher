@@ -343,7 +343,6 @@ const reducer = (
         },
       };
     case TEXT_PROMPT_ACTIONS.NEXT_WORD: {
-      console.log(action.payload.nextWordElem?.offsetTop);
       if (
         action.payload.nextWordElem &&
         action.payload.nextWordElem?.offsetTop !==
