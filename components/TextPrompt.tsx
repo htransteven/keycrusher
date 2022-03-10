@@ -11,6 +11,7 @@ import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
 
 const WORD_GAP = "0.35rem";
+const FONT_SIZE = "1.5rem";
 
 const Container = styled.div`
   position: relative;
@@ -23,28 +24,32 @@ const Cursor = styled.div`
   transition: 0.1s all;
 `;
 
+const TemplateBoxWrapper = styled.div`
+  padding: 20px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  background-color: ${({ theme }) => theme.textPrompt.backgroundColor};
+  margin-bottom: 10px;
+  border-radius: 3px;
+`;
+
 const TemplateBox = styled.div`
-  max-height: 300px;
-  overflow: auto;
+  max-height: calc((2 * ${FONT_SIZE}) + 15px);
+  height: 100%;
+  overflow: hidden;
   position: relative;
   display: flex;
   flex-flow: row wrap;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: ${WORD_GAP};
-  padding: 20px;
-  margin-bottom: 10px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.textPrompt.backgroundColor};
+  gap: ${WORD_GAP} calc(${WORD_GAP} * 1.5);
   color: ${({ theme }) => theme.textPrompt.textColor};
 `;
 
 const TemplateCharacter = styled.span<{ color: string }>`
   padding-left: 2px;
   transition: 0.15s all;
-  font-size: 1.5rem;
+  font-size: ${FONT_SIZE};
 
   color: ${({ color }) => color};
 `;
@@ -66,7 +71,7 @@ const InputWrapper = styled.div`
 `;
 
 const StyledInput = styled.input`
-  font-size: 1.5rem;
+  font-size: ${FONT_SIZE};
   height: 100%;
   width: 100%;
   outline: none;
@@ -113,7 +118,7 @@ const Timer = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: ${FONT_SIZE};
   padding: 20px;
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
@@ -157,6 +162,10 @@ interface TextPromptState {
   wpm: number;
   timer: number;
   words: string[];
+  teleprompt: {
+    elem: HTMLDivElement | null;
+    scrollOffsetY: number;
+  };
   telemetry: {
     numCorrect: number;
     numErrors: number;
@@ -182,6 +191,10 @@ const initialState: TextPromptState = {
   wpm: 0,
   timer: 60,
   words: words,
+  teleprompt: {
+    elem: null,
+    scrollOffsetY: 0,
+  },
   telemetry: {
     numCorrect: 0,
     numErrors: 0,
@@ -202,7 +215,7 @@ const initialState: TextPromptState = {
   currentWordIndex: 0,
   currentCharIndex: 0,
   cursor: {
-    style: "block",
+    style: "line",
     top: 0,
     left: 0,
     width: 0,
@@ -225,6 +238,9 @@ interface TextPromptTimerTickAction {
 
 interface TextPromptStartAction {
   type: TEXT_PROMPT_ACTIONS.START;
+  payload: {
+    telepromptRef: HTMLDivElement;
+  };
 }
 
 interface TextPromptTimerResetAction {
@@ -240,6 +256,10 @@ interface TextPromptMoveCaretAction {
 
 interface TextPromptNextWordAction {
   type: TEXT_PROMPT_ACTIONS.NEXT_WORD;
+  payload: {
+    prevWordElem: HTMLSpanElement | null;
+    nextWordElem: HTMLSpanElement | null;
+  };
 }
 
 interface TextPromptInputChangeAction {
@@ -266,7 +286,14 @@ const reducer = (
 ): TextPromptState => {
   switch (action.type) {
     case TEXT_PROMPT_ACTIONS.START:
-      return { ...state, active: true };
+      return {
+        ...state,
+        teleprompt: {
+          ...state.teleprompt,
+          elem: action.payload.telepromptRef,
+        },
+        active: true,
+      };
     case TEXT_PROMPT_ACTIONS.RESET:
       return { ...initialState };
     case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
@@ -281,7 +308,8 @@ const reducer = (
       return {
         ...state,
         wpm: Math.round(
-          (state.telemetry.numCorrect / 5 - state.telemetry.numErrors) /
+          state.telemetry.numCorrect /
+            5 /
             ((initialState.timer - state.timer) / 60)
         ),
         timer: state.timer - 1,
@@ -289,13 +317,33 @@ const reducer = (
     }
     case TEXT_PROMPT_ACTIONS.MOVE_CARET:
       return { ...state, currentCharIndex: action.payload.selectionIndex };
-    case TEXT_PROMPT_ACTIONS.NEXT_WORD:
+    case TEXT_PROMPT_ACTIONS.NEXT_WORD: {
+      console.log(action.payload.nextWordElem?.offsetTop);
+      if (
+        action.payload.nextWordElem &&
+        action.payload.nextWordElem?.offsetTop !==
+          action.payload.prevWordElem?.offsetTop
+      ) {
+        // new line
+        return {
+          ...state,
+          teleprompt: {
+            ...state.teleprompt,
+            scrollOffsetY: action.payload.nextWordElem?.offsetTop,
+          },
+          userInput: "",
+          currentWordIndex: state.currentWordIndex + 1,
+          currentCharIndex: 0,
+        };
+      }
+
       return {
         ...state,
         userInput: "",
         currentWordIndex: state.currentWordIndex + 1,
         currentCharIndex: 0,
       };
+    }
     case TEXT_PROMPT_ACTIONS.INPUT_CHANGE: {
       if (!action.payload.key) {
         //assume backspace
@@ -369,8 +417,12 @@ const reducer = (
 export const TextPrompt: React.FC<TextPrompt> = () => {
   const theme = useTheme();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [telepromptRef, setTelepromptRef] = useState<HTMLDivElement | null>(
+    null
+  );
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
+  const [nextWordRef, setNextWordRef] = useState<HTMLSpanElement | null>(null);
   const [startRTT, setStartRTT] = useState(0);
   const [resetSpinCounter, setResetSpinCounter] = useState(0);
 
@@ -453,14 +505,24 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
       const key = (e.nativeEvent as InputEvent).data;
 
       if (!state.active) {
-        dispatch({ type: TEXT_PROMPT_ACTIONS.START });
+        if (!telepromptRef) return;
+        dispatch({
+          type: TEXT_PROMPT_ACTIONS.START,
+          payload: { telepromptRef },
+        });
         setStartRTT(window.performance.now());
       }
       const target = e.target as HTMLInputElement;
       const selectionStart = target.selectionStart || 0;
 
       if (target.value.charAt(target.value.length - 1) === " ") {
-        dispatch({ type: TEXT_PROMPT_ACTIONS.NEXT_WORD });
+        dispatch({
+          type: TEXT_PROMPT_ACTIONS.NEXT_WORD,
+          payload: {
+            prevWordElem: wordRef,
+            nextWordElem: nextWordRef,
+          },
+        });
       } else {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
@@ -474,13 +536,16 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         setStartRTT(window.performance.now());
       }
     },
-    [state.active]
+    [state.active, nextWordRef]
   );
 
   const onWordRefChange = useCallback(
     (elem, wordIndex) => {
       if (state.currentWordIndex === wordIndex) {
         setWordRef(elem);
+      }
+      if (state.currentWordIndex + 1 === wordIndex) {
+        setNextWordRef(elem);
       }
     },
     [state.currentWordIndex]
@@ -533,31 +598,37 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     [state.telemetry.history, state.currentWordIndex, state.currentCharIndex]
   );
 
+  if (telepromptRef) {
+    telepromptRef.scrollTop = state.teleprompt.scrollOffsetY;
+  }
+
   return (
     <Container>
-      <TemplateBox>
-        {cursorPosition &&
-          state.currentCharIndex <=
-            state.words[state.currentWordIndex].length && (
-            <Cursor style={cursorPosition} />
-          )}
-        {state.words.map((word, wIndex) => (
-          <TemplateWord
-            key={`template-${wIndex}`}
-            ref={(elem) => onWordRefChange(elem, wIndex)}
-          >
-            {word.split("").map((character, cIndex) => (
-              <TemplateCharacter
-                key={`template-${wIndex}-${cIndex}`}
-                ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
-                color={getCharacterCorrectness(wIndex, cIndex)}
-              >
-                {character}
-              </TemplateCharacter>
-            ))}
-          </TemplateWord>
-        ))}
-      </TemplateBox>
+      <TemplateBoxWrapper>
+        <TemplateBox ref={(node) => setTelepromptRef(node)}>
+          {cursorPosition &&
+            state.currentCharIndex <=
+              state.words[state.currentWordIndex].length && (
+              <Cursor style={cursorPosition} />
+            )}
+          {state.words.map((word, wIndex) => (
+            <TemplateWord
+              key={`template-${wIndex}`}
+              ref={(elem) => onWordRefChange(elem, wIndex)}
+            >
+              {word.split("").map((character, cIndex) => (
+                <TemplateCharacter
+                  key={`template-${wIndex}-${cIndex}`}
+                  ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
+                  color={getCharacterCorrectness(wIndex, cIndex)}
+                >
+                  {character}
+                </TemplateCharacter>
+              ))}
+            </TemplateWord>
+          ))}
+        </TemplateBox>
+      </TemplateBoxWrapper>
       <ControlBox>
         <InputWrapper>
           <StyledInput
