@@ -9,7 +9,7 @@ const StyledKeyCap = styled.span<{
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 500;
-  padding: "4px 12px";
+  padding: 4px 12px;
   ${({ isSingleCharacter }) =>
     isSingleCharacter
       ? `
