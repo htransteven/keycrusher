@@ -480,7 +480,7 @@ export const Teleprompter: React.FC = () => {
     setTimeout(() => inputRef?.current?.focus(), 100);
     setResetSpinCounter((prev) => prev + 1);
     setCoverTimer(4);
-  }, [dispatch, setTimeout, setResetSpinCounter]);
+  }, [dispatch, setResetSpinCounter]);
 
   useEffect(() => {
     const handleGlobalReset = (e: KeyboardEvent) => {
@@ -501,7 +501,7 @@ export const Teleprompter: React.FC = () => {
     return () => {
       window.removeEventListener("keydown", handleGlobalReset);
     };
-  }, [inputRef.current]);
+  }, [handleReset]);
 
   useEffect(() => {
     if (state.teleprompter.cover && coverTimer <= 3) {
@@ -520,7 +520,7 @@ export const Teleprompter: React.FC = () => {
         clearInterval(coverTimerTick);
       };
     }
-  }, [state.active, coverTimer]);
+  }, [state.active, coverTimer, state.teleprompter.cover]);
 
   useEffect(() => {
     if (state.active) {
@@ -635,7 +635,14 @@ export const Teleprompter: React.FC = () => {
         });
       }
     },
-    [state.active, nextWordRef]
+    [
+      state.telemetry.history,
+      state.currentWordIndex,
+      state.teleprompter.cover,
+      state.active,
+      wordRef,
+      nextWordRef,
+    ]
   );
 
   const onWordRefChange = useCallback(
@@ -694,7 +701,14 @@ export const Teleprompter: React.FC = () => {
         }
       }
     },
-    [state.telemetry.history, state.currentWordIndex, state.currentCharIndex]
+    [
+      state.currentWordIndex,
+      state.telemetry.history,
+      state.currentCharIndex,
+      theme.teleprompt.textColor,
+      theme.teleprompt.correct,
+      theme.teleprompt.error,
+    ]
   );
 
   return (
