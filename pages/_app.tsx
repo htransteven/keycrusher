@@ -1,13 +1,18 @@
-import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { FirebaseProvider } from "../contexts/FirebaseContext";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
 import { DARK_THEME } from "../styles/themes/darkTheme";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { PageWrapper } from "../components/PageWrapper";
+import { UserProvider } from "../contexts/UserContext";
 
 const GlobalStyle = createGlobalStyle`
-  html {
+  * {
+    font-family: 'Roboto', sans-serif;
     box-sizing: border-box;
+  }
+
+  html {
     margin:0;
     padding: 0;
     background-color: ${({ theme }) => theme.htmlBackgroundColor};
@@ -31,9 +36,12 @@ const GlobalStyle = createGlobalStyle`
       font-size: 16px;
     }
   }
+  a {
+    text-decoration: none;
+  }
 
-  * {
-    font-family: 'Roboto', sans-serif;
+  input, button {
+    border: none;
   }
 
   span, input {
@@ -47,7 +55,11 @@ function MyApp({ Component, pageProps }: AppProps) {
       <GlobalStyle theme={DARK_THEME} />
       <ThemeProvider theme={DARK_THEME}>
         <FirebaseProvider>
-          <Component {...pageProps} />
+          <UserProvider>
+            <PageWrapper>
+              <Component {...pageProps} />
+            </PageWrapper>
+          </UserProvider>
         </FirebaseProvider>
       </ThemeProvider>
     </>

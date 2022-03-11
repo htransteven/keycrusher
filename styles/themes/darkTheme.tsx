@@ -1,5 +1,6 @@
 export const COLOR_PALLETE = {
   lightGrey: "#2f3943",
+  ligherGrey: "#878787",
   midGrey: "#28303a",
   darkGrey: "#222831",
   grey: "#393E46",
@@ -13,10 +14,78 @@ export const COLOR_PALLETE = {
   translucent: {
     blue: "rgba(130, 208, 255, 0.5)",
   },
+  transparent: "transparent",
 };
 
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
+  primaryText: COLOR_PALLETE.white,
+  secondaryText: COLOR_PALLETE.ligherGrey,
+  form: {
+    errorMessageColor: COLOR_PALLETE.error,
+    input: {
+      labelColor: COLOR_PALLETE.offwhite,
+      textColor: COLOR_PALLETE.white,
+      backgroundColor: COLOR_PALLETE.darkGrey,
+      borderColor: COLOR_PALLETE.lightGrey,
+      active: {
+        labelColor: COLOR_PALLETE.correct,
+        borderColor: COLOR_PALLETE.correct,
+        backgroundColor: COLOR_PALLETE.midGrey,
+      },
+    },
+    button: {
+      variants: {
+        default: {
+          backgroundColor: COLOR_PALLETE.correct,
+          textColor: COLOR_PALLETE.white,
+          borderColor: COLOR_PALLETE.transparent,
+        },
+        default_inverse: {
+          backgroundColor: COLOR_PALLETE.transparent,
+          textColor: COLOR_PALLETE.correct,
+          borderColor: COLOR_PALLETE.correct,
+          hover: {
+            backgroundColor: COLOR_PALLETE.correct,
+            textColor: COLOR_PALLETE.white,
+          },
+        },
+        neutral: {
+          backgroundColor: COLOR_PALLETE.lightGrey,
+          textColor: COLOR_PALLETE.white,
+          borderColor: COLOR_PALLETE.transparent,
+        },
+        neutral_inverse: {
+          backgroundColor: COLOR_PALLETE.transparent,
+          textColor: COLOR_PALLETE.white,
+          borderColor: COLOR_PALLETE.lightGrey,
+          hover: {
+            backgroundColor: COLOR_PALLETE.lightGrey,
+            textColor: COLOR_PALLETE.white,
+          },
+        },
+        negative: {
+          backgroundColor: COLOR_PALLETE.error,
+          textColor: COLOR_PALLETE.white,
+          borderColor: COLOR_PALLETE.transparent,
+        },
+        negative_inverse: {
+          backgroundColor: COLOR_PALLETE.transparent,
+          textColor: COLOR_PALLETE.error,
+          borderColor: COLOR_PALLETE.error,
+          hover: {
+            backgroundColor: COLOR_PALLETE.error,
+            textColor: COLOR_PALLETE.white,
+          },
+        },
+        helper: {
+          backgroundColor: COLOR_PALLETE.transparent,
+          textColor: COLOR_PALLETE.ligherGrey,
+          borderColor: COLOR_PALLETE.transparent,
+        },
+      },
+    },
+  },
   appTitle: {
     keyColor: COLOR_PALLETE.offwhite,
     keyBackgroundColor: COLOR_PALLETE.baseBlue,
