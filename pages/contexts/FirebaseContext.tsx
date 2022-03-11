@@ -40,7 +40,7 @@ export const FirebaseProvider: React.FC = ({ children }) => {
     if (!analytics) {
       setAnalytics(getAnalytics(app));
     }
-  }, [analytics]);
+  }, [analytics, app]);
 
   return (
     <FirebaseContext.Provider value={analytics ? { app, analytics } : null}>
