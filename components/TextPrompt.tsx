@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
+import { Telemetry } from "../models/Telemetry";
+import { PostChallengeStats } from "./PostChallengeStats";
 
 const WORD_GAP = "0.35rem";
 const FONT_SIZE = "1.5rem";
@@ -150,13 +152,7 @@ interface CursorPosition {
   height: number | string;
 }
 
-interface KeyTelemetry {
-  char: string;
-  rtt?: number;
-  correct?: boolean;
-}
-
-interface TextPromptState {
+export interface TextPromptState {
   active: boolean;
   wpm: number;
   timer: number;
@@ -166,15 +162,7 @@ interface TextPromptState {
     fetchWords: number;
     lineStartWordIndex: number;
   };
-  telemetry: {
-    numCorrect: number;
-    numErrors: number;
-    history: {
-      [wordIndex: string | number]: {
-        [charIndex: string | number]: KeyTelemetry;
-      };
-    };
-  };
+  telemetry: Telemetry;
   userInput: string;
   currentWordIndex: number;
   currentCharIndex: number;
@@ -184,7 +172,7 @@ interface TextPromptState {
 const INITIAL_STATE: TextPromptState = {
   active: false,
   wpm: 0,
-  timer: 60,
+  timer: 15,
   teleprompt: {
     elem: null,
     scrollOffsetY: 0,
@@ -261,7 +249,7 @@ interface TextPromptInputChangeAction {
     value: string;
     selectionIndex: number;
     key?: string;
-    rtt?: number;
+    rtt: number;
   };
 }
 
@@ -329,7 +317,7 @@ const reducer = (
                 [baseWordIndex + wordIndex]: word.split("").reduce(
                   (charAcc, char, charIndex) => ({
                     ...charAcc,
-                    [charIndex]: { char },
+                    [charIndex]: { char, correct: false, rtt: 0 },
                   }),
                   {}
                 ),
@@ -730,6 +718,9 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
           />
         </IconWrapper>
       </ControlBox>
+      {!state.active && state.timer === 0 && (
+        <PostChallengeStats {...state.telemetry} />
+      )}
     </Container>
   );
 };

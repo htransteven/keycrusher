@@ -7,6 +7,7 @@ export const COLOR_PALLETE = {
   midnightBlue: "#1B1B2F",
   error: "#FF4C29",
   correct: "#29C7AC",
+  test: "#BFF2E9",
   white: "#f2f2f2",
   offwhite: "#DDDDDD",
   translucent: {
@@ -32,5 +33,15 @@ export const DARK_THEME = {
         },
       },
     },
+  },
+  graphs: {
+    data: {
+      default: COLOR_PALLETE.baseBlue,
+      active: COLOR_PALLETE.correct,
+    },
+    axis: {
+      color: COLOR_PALLETE.offwhite,
+    },
+    referenceLineColor: COLOR_PALLETE.white,
   },
 };
