@@ -10,6 +10,7 @@ import React, {
 import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
 import { Telemetry } from "../models/Telemetry";
+import { BREAKPOINTS } from "../styles/breakpoints";
 import { PostChallengeStats } from "./PostChallengeStats";
 
 const WORD_GAP = "0.35rem";
@@ -82,13 +83,33 @@ const TelepromptWord = styled.span`
 `;
 
 const ControlBox = styled.div`
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  grid-gap: 10px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const TelepromptStatus = styled.span`
+  display: flex;
+  gap: 10px;
+`;
+
+const TelepromptStatusData = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+
+  color: ${({ theme }) => theme.teleprompt.textColor};
+  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
 `;
 
 const InputWrapper = styled.div`
   position: relative;
+  width: 100%;
 `;
 
 const StyledInput = styled.input`
@@ -122,6 +143,10 @@ const InputInstruction = styled.div`
   justify-content: center;
   gap: 10px;
   color: ${({ theme }) => theme.teleprompt.input.instructions.textColor};
+
+  @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
+    display: none;
+  }
 `;
 
 const KeyCap = styled.span`
@@ -140,6 +165,7 @@ const Timer = styled.span`
   align-items: center;
   justify-content: center;
   font-size: ${FONT_SIZE};
+  white-space: nowrap;
   padding: 20px;
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
@@ -150,8 +176,8 @@ const Timer = styled.span`
 `;
 
 const IconWrapper = styled.div`
-  height: 100%;
-  width: 100%;
+  display: flex;
+  align-items: center;
   padding: 20px;
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
@@ -750,7 +776,13 @@ export const Teleprompter: React.FC = () => {
             onKeyUp={handleKeyUp}
             onChange={handleChange}
             value={state.userInput}
-            placeholder={state.active ? "" : "Type here..."}
+            placeholder={
+              state.active
+                ? ""
+                : coverTimer > 3
+                ? "Press SPACE to start"
+                : "Press CTRL + SPACE to restart"
+            }
             disabled={state.timer === 0}
             autoComplete="off"
             autoCorrect="off"
@@ -773,26 +805,28 @@ export const Teleprompter: React.FC = () => {
             )}
           </InputInstruction>
         </InputWrapper>
-        <Timer>
-          {state.wpm < 100 ? "0" : ""}
-          {state.wpm < 10 ? "0" : ""}
-          {isFinite(state.wpm) ? state.wpm : "0"} WPM
-        </Timer>
-        <Timer>
-          {state.timer < 10 ? "0" : ""}
-          {state.timer}
-        </Timer>
         <IconWrapper onClick={handleReset}>
           <ResetIcon
             style={{
-              height: "100%",
-              width: "100%",
+              height: "2rem",
+              width: "2rem",
               transition: "0.3s all",
               transform: `rotate(calc(180deg * ${resetSpinCounter}))`,
             }}
           />
         </IconWrapper>
       </ControlBox>
+      <TelepromptStatus>
+        <TelepromptStatusData>
+          {state.wpm < 100 ? "0" : ""}
+          {state.wpm < 10 ? "0" : ""}
+          {isFinite(state.wpm) ? state.wpm : "0"} WPM
+        </TelepromptStatusData>
+        <TelepromptStatusData>
+          {state.timer < 10 ? "0" : ""}
+          {state.timer}s left
+        </TelepromptStatusData>
+      </TelepromptStatus>
       {!state.active && state.timer === 0 && (
         <PostChallengeStats {...state.telemetry} />
       )}
