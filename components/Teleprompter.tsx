@@ -21,21 +21,41 @@ const Container = styled.div`
 
 const Cursor = styled.div`
   position: absolute;
-  background-color: ${({ theme }) => theme.textPrompt.cursorColor};
+  background-color: ${({ theme }) => theme.teleprompt.cursorColor};
 
   transition: 0.1s all;
 `;
 
-const TemplateBoxWrapper = styled.div`
+const TeleprompterWrapper = styled.div`
+  position: relative;
   padding: 20px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.textPrompt.backgroundColor};
+  background-color: ${({ theme }) => theme.teleprompt.backgroundColor};
   margin-bottom: 10px;
   border-radius: 3px;
+  overflow: hidden;
 `;
 
-const TemplateBox = styled.div`
+const TeleprompterCover = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.teleprompt.textColor};
+  font-size: ${FONT_SIZE};
+
+  background-color: ${({ theme }) => theme.teleprompt.backgroundColor};
+`;
+
+const TeleprompterBox = styled.div`
   height: calc((2 * ${FONT_SIZE}) + 15px);
   overflow: hidden;
   position: relative;
@@ -44,10 +64,10 @@ const TemplateBox = styled.div`
   align-items: flex-start;
   justify-content: flex-start;
   gap: ${WORD_GAP} calc(${WORD_GAP} * 1.5);
-  color: ${({ theme }) => theme.textPrompt.textColor};
+  color: ${({ theme }) => theme.teleprompt.textColor};
 `;
 
-const TemplateCharacter = styled.span<{ color: string }>`
+const TelepromptCharacter = styled.span<{ color: string }>`
   padding-left: 2px;
   transition: 0.15s all;
   font-size: ${FONT_SIZE};
@@ -55,8 +75,8 @@ const TemplateCharacter = styled.span<{ color: string }>`
   color: ${({ color }) => color};
 `;
 
-const TemplateWord = styled.span`
-  & > ${TemplateCharacter}:last-of-type {
+const TelepromptWord = styled.span`
+  & > ${TelepromptCharacter}:last-of-type {
     padding-right: 2px;
   }
 `;
@@ -82,8 +102,8 @@ const StyledInput = styled.input`
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
 
-  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
-  color: ${({ theme }) => theme.textPrompt.textColor};
+  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
+  color: ${({ theme }) => theme.teleprompt.textColor};
 
   &:disabled {
     opacity: 0.5;
@@ -101,7 +121,7 @@ const InputInstruction = styled.div`
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: ${({ theme }) => theme.textPrompt.input.instructions.textColor};
+  color: ${({ theme }) => theme.teleprompt.input.instructions.textColor};
 `;
 
 const KeyCap = styled.span`
@@ -109,8 +129,8 @@ const KeyCap = styled.span`
   padding: 4px 12px;
   border-radius: 3px;
   background-color: ${({ theme }) =>
-    theme.textPrompt.input.instructions.keyCap.backgroundColor};
-  color: ${({ theme }) => theme.textPrompt.input.instructions.keyCap.textColor};
+    theme.teleprompt.input.instructions.keyCap.backgroundColor};
+  color: ${({ theme }) => theme.teleprompt.input.instructions.keyCap.textColor};
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
 `;
@@ -125,8 +145,8 @@ const Timer = styled.span`
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
 
-  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
-  color: ${({ theme }) => theme.textPrompt.textColor};
+  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
+  color: ${({ theme }) => theme.teleprompt.textColor};
 `;
 
 const IconWrapper = styled.div`
@@ -136,11 +156,9 @@ const IconWrapper = styled.div`
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  color: ${({ theme }) => theme.textPrompt.textColor};
-  background-color: ${({ theme }) => theme.textPrompt.input.backgroundColor};
+  color: ${({ theme }) => theme.teleprompt.textColor};
+  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
 `;
-
-interface TextPrompt {}
 
 type CursorStyle = "line" | "block";
 
@@ -152,10 +170,11 @@ interface CursorPosition {
   height: number | string;
 }
 
-export interface TextPromptState {
+export interface TeleprompterState {
   active: boolean;
   wpm: number;
   timer: number;
+  prevPerformanceTime: number;
   teleprompt: {
     elem: HTMLDivElement | null;
     scrollOffsetY: number;
@@ -169,10 +188,11 @@ export interface TextPromptState {
   cursor: CursorPosition;
 }
 
-const INITIAL_STATE: TextPromptState = {
+const INITIAL_STATE: TeleprompterState = {
   active: false,
   wpm: 0,
   timer: 15,
+  prevPerformanceTime: 0,
   teleprompt: {
     elem: null,
     scrollOffsetY: 0,
@@ -197,45 +217,42 @@ const INITIAL_STATE: TextPromptState = {
 };
 
 enum TEXT_PROMPT_ACTIONS {
+  START = "START",
   ADD_WORDS = "ADD_WORDS",
   MOVE_CARET = "MOVE_CARET",
   NEXT_WORD = "NEXT_WORD",
   INPUT_CHANGE = "INPUT_CHANGE",
   TIMER_TICK = "TIMER_TICK",
-  START = "START",
   RESET = "RESET",
 }
 
-interface TextPromptTimerTickAction {
+interface TeleprompteStartAction {
+  type: TEXT_PROMPT_ACTIONS.START;
+}
+
+interface TeleprompterTimerTickAction {
   type: TEXT_PROMPT_ACTIONS.TIMER_TICK;
 }
 
-interface TextPromptStartAction {
-  type: TEXT_PROMPT_ACTIONS.START;
-  payload: {
-    telepromptRef: HTMLDivElement;
-  };
-}
-
-interface TextPromptTimerResetAction {
+interface TeleprompterTimerResetAction {
   type: TEXT_PROMPT_ACTIONS.RESET;
 }
 
-interface TextPromptMoveCaretAction {
+interface TeleprompterMoveCaretAction {
   type: TEXT_PROMPT_ACTIONS.MOVE_CARET;
   payload: {
     selectionIndex: number;
   };
 }
 
-interface TextPromptAddWordsAction {
+interface TeleprompterAddWordsAction {
   type: TEXT_PROMPT_ACTIONS.ADD_WORDS;
   payload: {
     words: string[];
   };
 }
 
-interface TextPromptNextWordAction {
+interface TeleprompterNextWordAction {
   type: TEXT_PROMPT_ACTIONS.NEXT_WORD;
   payload: {
     prevWordElem: HTMLSpanElement | null;
@@ -243,39 +260,30 @@ interface TextPromptNextWordAction {
   };
 }
 
-interface TextPromptInputChangeAction {
+interface TeleprompterInputChangeAction {
   type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE;
   payload: {
+    active: boolean;
     value: string;
     selectionIndex: number;
     key?: string;
-    rtt: number;
+    currentPerformanceTime: number;
   };
 }
 
-type TextPromptAction =
-  | TextPromptAddWordsAction
-  | TextPromptStartAction
-  | TextPromptTimerTickAction
-  | TextPromptTimerResetAction
-  | TextPromptMoveCaretAction
-  | TextPromptNextWordAction
-  | TextPromptInputChangeAction;
+type TeleprompterAction =
+  | TeleprompterAddWordsAction
+  | TeleprompterTimerTickAction
+  | TeleprompterTimerResetAction
+  | TeleprompterMoveCaretAction
+  | TeleprompterNextWordAction
+  | TeleprompterInputChangeAction;
 
 const reducer = (
-  state: TextPromptState,
-  action: TextPromptAction
-): TextPromptState => {
+  state: TeleprompterState,
+  action: TeleprompterAction
+): TeleprompterState => {
   switch (action.type) {
-    case TEXT_PROMPT_ACTIONS.START:
-      return {
-        ...state,
-        teleprompt: {
-          ...state.teleprompt,
-          elem: action.payload.telepromptRef,
-        },
-        active: true,
-      };
     case TEXT_PROMPT_ACTIONS.RESET:
       return { ...INITIAL_STATE };
     case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
@@ -401,7 +409,7 @@ const reducer = (
       history[state.currentWordIndex][state.currentCharIndex] = {
         ...history[state.currentWordIndex][state.currentCharIndex],
         correct: action.payload.key === correctChar,
-        rtt: action.payload.rtt,
+        rtt: action.payload.currentPerformanceTime - state.prevPerformanceTime,
       };
 
       const numCorrect =
@@ -415,6 +423,8 @@ const reducer = (
           : state.telemetry.numErrors;
       return {
         ...state,
+        prevPerformanceTime: action.payload.currentPerformanceTime,
+        active: action.payload.active,
         userInput: action.payload.value,
         currentCharIndex: action.payload.selectionIndex,
         telemetry: {
@@ -429,17 +439,14 @@ const reducer = (
   }
 };
 
-export const TextPrompt: React.FC<TextPrompt> = () => {
+export const Teleprompter: React.FC = () => {
   const theme = useTheme();
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-  const [telepromptRef, setTelepromptRef] = useState<HTMLDivElement | null>(
-    null
-  );
+  const [state, dispatch] = useReducer(reducer, { ...INITIAL_STATE });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
   const [nextWordRef, setNextWordRef] = useState<HTMLSpanElement | null>(null);
-  const [startRTT, setStartRTT] = useState(0);
+  const [coverTeleprompt, setCoverTeleprompt] = useState(true);
   const [resetSpinCounter, setResetSpinCounter] = useState(0);
 
   useEffect(() => {
@@ -544,14 +551,6 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
   const handleChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const key = (e.nativeEvent as InputEvent).data;
-      if (!state.active) {
-        if (!telepromptRef) return;
-        dispatch({
-          type: TEXT_PROMPT_ACTIONS.START,
-          payload: { telepromptRef },
-        });
-        setStartRTT(window.performance.now());
-      }
       const target = e.target as HTMLInputElement;
       const selectionStart = target.selectionStart || 0;
 
@@ -573,13 +572,13 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
           payload: {
+            active: state.timer > 0,
             value: target.value,
             selectionIndex: selectionStart,
             key: key === null ? undefined : key,
-            rtt: window.performance.now() - startRTT,
+            currentPerformanceTime: window.performance.now(),
           },
         });
-        setStartRTT(window.performance.now());
       }
     },
     [state.active, nextWordRef]
@@ -619,25 +618,25 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
     (wordIndex: number, charIndex: number) => {
       if (wordIndex > state.currentWordIndex) {
         // upcoming words
-        return theme.textPrompt.textColor;
+        return theme.teleprompt.textColor;
       } else if (wordIndex < state.currentWordIndex) {
         // previous words
         return state.telemetry.history[wordIndex][charIndex].correct
-          ? theme.textPrompt.correct
-          : theme.textPrompt.error;
+          ? theme.teleprompt.correct
+          : theme.teleprompt.error;
       } else {
         //current word
         if (charIndex > state.currentCharIndex) {
           // upcoming characters
-          return theme.textPrompt.textColor;
+          return theme.teleprompt.textColor;
         } else if (charIndex < state.currentCharIndex) {
           // previous characters
           return state.telemetry.history[wordIndex][charIndex].correct
-            ? theme.textPrompt.correct
-            : theme.textPrompt.error;
+            ? theme.teleprompt.correct
+            : theme.teleprompt.error;
         } else {
           //current character
-          return theme.textPrompt.textColor;
+          return theme.teleprompt.textColor;
         }
       }
     },
@@ -646,31 +645,34 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
 
   return (
     <Container>
-      <TemplateBoxWrapper>
-        <TemplateBox ref={(node) => setTelepromptRef(node)}>
+      <TeleprompterWrapper>
+        <TeleprompterBox>
           {cursorPosition && <Cursor style={cursorPosition} />}
           {Object.keys(state.telemetry.history).map((wKey, wIndex) =>
             wIndex >= state.teleprompt.lineStartWordIndex ? (
-              <TemplateWord
-                key={`template-${wIndex}`}
+              <TelepromptWord
+                key={`teleprompt-${wIndex}`}
                 ref={(elem) => onWordRefChange(elem, wIndex)}
               >
                 {Object.keys(state.telemetry.history[wKey]).map(
                   (cKey, cIndex) => (
-                    <TemplateCharacter
-                      key={`template-${wIndex}-${cIndex}`}
+                    <TelepromptCharacter
+                      key={`teleprompt-${wIndex}-${cIndex}`}
                       ref={(elem) => onCharRefChange(elem, wIndex, cIndex)}
                       color={getCharacterCorrectness(wIndex, cIndex)}
                     >
                       {state.telemetry.history[wKey][cKey].char}
-                    </TemplateCharacter>
+                    </TelepromptCharacter>
                   )
                 )}
-              </TemplateWord>
+              </TelepromptWord>
             ) : null
           )}
-        </TemplateBox>
-      </TemplateBoxWrapper>
+        </TeleprompterBox>
+        {coverTeleprompt && (
+          <TeleprompterCover>Are you ready?</TeleprompterCover>
+        )}
+      </TeleprompterWrapper>
       <ControlBox>
         <InputWrapper>
           <StyledInput
@@ -696,7 +698,7 @@ export const TextPrompt: React.FC<TextPrompt> = () => {
         <Timer>
           {state.wpm < 100 ? "0" : ""}
           {state.wpm < 10 ? "0" : ""}
-          {state.wpm > 0 ? state.wpm : "0"} WPM
+          {isFinite(state.wpm) ? state.wpm : "0"} WPM
         </Timer>
         <Timer>
           {state.timer < 10 ? "0" : ""}

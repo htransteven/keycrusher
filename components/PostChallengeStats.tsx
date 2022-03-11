@@ -192,7 +192,7 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
               <Line
                 type="monotone"
                 dataKey="rtt"
-                stroke={theme.textPrompt.correct}
+                stroke={theme.graphs.data.active}
                 activeDot={{ r: 8 }}
               />
               <ReferenceLine

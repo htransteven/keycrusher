@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import styled from "styled-components";
-import { TextPrompt } from "../components/TextPrompt";
+import { Teleprompter } from "../components/Teleprompter";
 
 const PageWrapper = styled.div`
   padding: 0 15vw;
@@ -19,7 +19,7 @@ const Home: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <TextPrompt />
+      <Teleprompter />
     </PageWrapper>
   );
 };

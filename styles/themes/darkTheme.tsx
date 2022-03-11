@@ -18,7 +18,7 @@ export const COLOR_PALLETE = {
 
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
-  textPrompt: {
+  teleprompt: {
     backgroundColor: COLOR_PALLETE.baseBlue,
     textColor: COLOR_PALLETE.offwhite,
     correct: COLOR_PALLETE.correct,
