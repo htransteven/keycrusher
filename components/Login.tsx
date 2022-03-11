@@ -13,6 +13,7 @@ import { FormEventHandler, useCallback, useState } from "react";
 import { getUnixTime } from "date-fns";
 import GoogleIcon from "../assets/google-brands.svg";
 import { User } from "../models/User";
+import { Loading } from "./Loading";
 
 const Container = styled.div`
   display: flex;
@@ -28,6 +29,7 @@ const Form = styled.form`
   justify-content: center;
   gap: 10px;
   width: 350px;
+  margin-bottom: 50px;
 `;
 
 const FormHeader = styled.div`
@@ -97,6 +99,7 @@ export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [waiting, setWaiting] = useState(false);
 
   const handleGoogleSignIn = useCallback(async () => {
     // Sign in using a redirect.
@@ -105,42 +108,57 @@ export const Login = () => {
     provider.addScope("profile");
     provider.addScope("email");
     //await signInWithRedirect(auth, provider);
-    await signInWithPopup(auth, provider).then((userCreds) => {
-      getDoc(doc(firestore, "users", userCreds.user.uid)).then((userDoc) => {
-        if (!userDoc.exists()) {
-          if (!userCreds.user.email)
-            throw new Error(
-              "The user from Google's redirect result has no email"
-            );
-          const now = getUnixTime(new Date());
-          const userPayload: User = {
-            username: userCreds.user.email.substring(
-              0,
-              userCreds.user.email.indexOf("@")
-            ),
-            email: userCreds.user.email,
-            lastLoggedIn: now,
-            created: now,
-          };
-
-          const credential = GoogleAuthProvider.credentialFromResult(userCreds);
-          if (credential) {
-            userPayload["oauth"] = {
-              providerId: credential.providerId,
-              idToken: credential.idToken,
-              accessToken: credential.accessToken,
+    setWaiting(true);
+    await signInWithPopup(auth, provider)
+      .then((userCreds) => {
+        setWaiting(false);
+        getDoc(doc(firestore, "users", userCreds.user.uid)).then((userDoc) => {
+          if (!userDoc.exists()) {
+            if (!userCreds.user.email)
+              throw new Error(
+                "The user from Google's redirect result has no email"
+              );
+            const now = getUnixTime(new Date());
+            const userPayload: User = {
+              username: userCreds.user.email.substring(
+                0,
+                userCreds.user.email.indexOf("@")
+              ),
+              email: userCreds.user.email,
+              lastLoggedIn: now,
+              created: now,
             };
+
+            const credential =
+              GoogleAuthProvider.credentialFromResult(userCreds);
+            if (credential) {
+              userPayload["oauth"] = {
+                providerId: credential.providerId,
+                idToken: credential.idToken,
+                accessToken: credential.accessToken,
+              };
+            }
+            setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
+          } else {
+            const now = getUnixTime(new Date());
+            updateDoc(doc(firestore, "users", userCreds.user.uid), {
+              lastLoggedIn: now,
+            });
           }
-          setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
+          setFirebaseUser(userCreds.user);
+        });
+      })
+      .catch((error) => {
+        setWaiting(false);
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        if (errorCode === "auth/popup-closed-by-user") {
+          setErrorMessage("Login window was closed, please try again.");
         } else {
-          const now = getUnixTime(new Date());
-          updateDoc(doc(firestore, "users", userCreds.user.uid), {
-            lastLoggedIn: now,
-          });
+          setErrorMessage(errorMessage);
         }
-        setFirebaseUser(userCreds.user);
+        console.log(error);
       });
-    });
     // This will trigger a full page redirect away from your app
     // See FirebaseContext.tsx for capturing redirect results
   }, [auth, firestore, setFirebaseUser]);
@@ -152,8 +170,10 @@ export const Login = () => {
     }
 
     // Sign in with email and pass.
+    setWaiting(true);
     signInWithEmailAndPassword(auth, email, password)
       .then((userCreds) => {
+        setWaiting(false);
         const now = getUnixTime(new Date());
         updateDoc(doc(firestore, "users", userCreds.user.uid), {
           lastLoggedIn: now,
@@ -161,6 +181,7 @@ export const Login = () => {
         setFirebaseUser(userCreds.user);
       })
       .catch(function (error) {
+        setWaiting(false);
         // Handle Errors here.
         var errorCode = error.code;
         var errorMessage = error.message;
@@ -186,8 +207,10 @@ export const Login = () => {
     }
 
     // Create user with email and pass.
+    setWaiting(true);
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCreds) => {
+        setWaiting(false);
         const now = getUnixTime(new Date());
         setDoc(doc(firestore, "users", userCreds.user.uid), {
           username,
@@ -198,6 +221,7 @@ export const Login = () => {
         setFirebaseUser(userCreds.user);
       })
       .catch(function (error) {
+        setWaiting(false);
         // Handle Errors here.
         var errorCode = error.code;
         var errorMessage = error.message;
@@ -274,6 +298,7 @@ export const Login = () => {
           </FormSubmitOptions>
         </FormOptions>
       </Form>
+      {waiting && <Loading />}
     </Container>
   );
 };

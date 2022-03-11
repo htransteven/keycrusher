@@ -1,6 +1,7 @@
 import Head from "next/head";
 import styled from "styled-components";
 import { Button } from "../components/form/Button";
+import { Loading } from "../components/Loading";
 import { Login } from "../components/Login";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { useUser } from "../contexts/UserContext";
@@ -25,15 +26,9 @@ const Title = styled.span`
 
 const ProfilePage = () => {
   const { auth } = useFirebase();
-  const { user } = useUser();
+  const { user, loadingUser } = useUser();
 
-  if (!user) {
-    return (
-      <Container>
-        <Login />
-      </Container>
-    );
-  }
+  console.log(user, loadingUser);
 
   return (
     <>
@@ -45,12 +40,16 @@ const ProfilePage = () => {
         />
       </Head>
       <Container>
-        <ProfileHeader>
-          <Title>Logged in as {user.username}</Title>
-          <Button variant={"negative"} onClick={() => auth.signOut()}>
-            Sign out
-          </Button>
-        </ProfileHeader>
+        {!user && loadingUser && <Loading value="LOADING USER" />}
+        {!user && !loadingUser && <Login />}
+        {user && (
+          <ProfileHeader>
+            <Title>Logged in as {user.username}</Title>
+            <Button variant={"negative"} onClick={() => auth.signOut()}>
+              Sign out
+            </Button>
+          </ProfileHeader>
+        )}
       </Container>
     </>
   );

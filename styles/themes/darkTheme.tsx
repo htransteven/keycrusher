@@ -91,6 +91,13 @@ export const DARK_THEME = {
     keyBackgroundColor: COLOR_PALLETE.baseBlue,
     crusherColor: COLOR_PALLETE.correct,
   },
+  keyCap: {
+    textColor: COLOR_PALLETE.darkGrey,
+    backgroundColor: COLOR_PALLETE.offwhite,
+    pressed: {
+      backgroundColor: COLOR_PALLETE.correct,
+    },
+  },
   alphaIndicatorColor: COLOR_PALLETE.error,
   betaIndicatorColor: COLOR_PALLETE.royalBlue,
   teleprompt: {
@@ -103,10 +110,6 @@ export const DARK_THEME = {
       backgroundColor: COLOR_PALLETE.lightGrey,
       instructions: {
         textColor: COLOR_PALLETE.offwhite,
-        keyCap: {
-          textColor: COLOR_PALLETE.darkGrey,
-          backgroundColor: COLOR_PALLETE.offwhite,
-        },
       },
     },
   },

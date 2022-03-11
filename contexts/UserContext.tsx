@@ -5,10 +5,13 @@ import { useFirebase } from "./FirebaseContext";
 
 interface UserContext {
   user: User | null;
-  googleAccessToken?: string;
+  loadingUser: boolean;
 }
 
-const UserContext = createContext<UserContext>({ user: null });
+const UserContext = createContext<UserContext>({
+  user: null,
+  loadingUser: false,
+});
 
 export const useUser = () => {
   return useContext(UserContext);
@@ -17,9 +20,7 @@ export const useUser = () => {
 export const UserProvider: React.FC = ({ children }) => {
   const { firestore, firebaseUser } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
-  const [googleAccessToken, setGoogleAccessToken] = useState<
-    string | undefined
-  >(undefined);
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     if (!firebaseUser) {
@@ -29,17 +30,22 @@ export const UserProvider: React.FC = ({ children }) => {
 
     if (!firestore) return;
 
+    setLoadingUser(true);
     getDoc(doc(firestore, "users", firebaseUser.uid))
-      .then((userDoc) =>
-        userDoc.exists() ? setUser(userDoc.data() as User) : null
-      )
+      .then((userDoc) => {
+        if (userDoc.exists()) {
+          setUser(userDoc.data() as User);
+        }
+        setLoadingUser(false);
+      })
       .catch((error) => {
         alert("An error occured when trying to find the user's document");
         console.log(error);
       });
   }, [firebaseUser, firestore]);
+
   return (
-    <UserContext.Provider value={{ user, googleAccessToken }}>
+    <UserContext.Provider value={{ user, loadingUser }}>
       {children}
     </UserContext.Provider>
   );

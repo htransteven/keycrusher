@@ -11,6 +11,7 @@ import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { KeyCap } from "./Keycap";
 import { PostChallengeStats } from "./PostChallengeStats";
 
 const WORD_GAP = "0.35rem";
@@ -147,32 +148,6 @@ const InputInstruction = styled.div`
   @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
     display: none;
   }
-`;
-
-const KeyCap = styled.span`
-  font-size: 0.8rem;
-  padding: 4px 12px;
-  border-radius: 3px;
-  background-color: ${({ theme }) =>
-    theme.teleprompt.input.instructions.keyCap.backgroundColor};
-  color: ${({ theme }) => theme.teleprompt.input.instructions.keyCap.textColor};
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-`;
-
-const Timer = styled.span`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: ${FONT_SIZE};
-  white-space: nowrap;
-  padding: 20px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-
-  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
-  color: ${({ theme }) => theme.teleprompt.textColor};
 `;
 
 const IconWrapper = styled.div`
@@ -796,11 +771,12 @@ export const Teleprompter: React.FC = () => {
           >
             {coverTimer > 3 ? (
               <>
-                Press <KeyCap>Space</KeyCap> to start
+                Press <KeyCap value="Space" /> to start
               </>
             ) : (
               <>
-                Press <KeyCap>Ctrl</KeyCap> + <KeyCap>Space</KeyCap> to restart
+                Press <KeyCap value="Ctrl" /> + <KeyCap value="Space" /> to
+                restart
               </>
             )}
           </InputInstruction>
