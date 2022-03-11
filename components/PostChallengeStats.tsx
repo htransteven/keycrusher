@@ -196,6 +196,7 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
                 dataKey="rtt"
                 stroke={theme.graphs.data.active}
                 activeDot={{ r: 8 }}
+                unit={"ms"}
               />
               <ReferenceLine
                 isFront={true}

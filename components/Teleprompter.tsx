@@ -409,7 +409,19 @@ const reducer = (
             telemetry: {
               numCorrect,
               numErrors,
-              history: { ...state.telemetry.history },
+              history: {
+                ...state.telemetry.history,
+                [state.currentWordIndex]: {
+                  ...state.telemetry.history[state.currentWordIndex],
+                  [state.currentCharIndex]: {
+                    ...state.telemetry.history[state.currentWordIndex][
+                      state.currentCharIndex
+                    ],
+                    correct: false,
+                    rtt: 0,
+                  },
+                },
+              },
             },
           };
         }
@@ -422,7 +434,9 @@ const reducer = (
       history[state.currentWordIndex][state.currentCharIndex] = {
         ...history[state.currentWordIndex][state.currentCharIndex],
         correct: action.payload.key === correctChar,
-        rtt: action.payload.currentPerformanceTime - state.prevPerformanceTime,
+        rtt: Math.round(
+          action.payload.currentPerformanceTime - state.prevPerformanceTime
+        ),
       };
 
       const numCorrect =
@@ -734,7 +748,7 @@ export const Teleprompter: React.FC = () => {
               display: !state.active ? "" : "none",
             }}
           >
-            {state.teleprompter.cover ? (
+            {coverTimer > 3 ? (
               <>
                 Press <KeyCap>Space</KeyCap> to start
               </>
