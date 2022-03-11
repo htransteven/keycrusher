@@ -15,6 +15,7 @@ const GlobalStyle = createGlobalStyle`
   html {
     margin:0;
     padding: 0;
+    color: ${({ theme }) => theme.primaryTextColor};
     background-color: ${({ theme }) => theme.htmlBackgroundColor};
     @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
       font-size: 12px;
@@ -46,6 +47,11 @@ const GlobalStyle = createGlobalStyle`
 
   span, input {
     font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
   }
 `;
 

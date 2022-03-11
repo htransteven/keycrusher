@@ -21,7 +21,6 @@ const ProfileHeader = styled.div`
 
 const Title = styled.span`
   font-size: 1rem;
-  color: ${({ theme }) => theme.primaryText};
 `;
 
 const ProfilePage = () => {

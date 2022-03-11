@@ -19,8 +19,13 @@ export const COLOR_PALLETE = {
 
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
-  primaryText: COLOR_PALLETE.white,
+  primaryTextColor: COLOR_PALLETE.white,
   secondaryText: COLOR_PALLETE.ligherGrey,
+  tooltip: {
+    backgroundColor: COLOR_PALLETE.baseBlue,
+    textColor: COLOR_PALLETE.offwhite,
+    borderColor: COLOR_PALLETE.offwhite,
+  },
   form: {
     errorMessageColor: COLOR_PALLETE.error,
     input: {
@@ -114,6 +119,15 @@ export const DARK_THEME = {
     },
   },
   graphs: {
+    info: {
+      title: {
+        textColor: COLOR_PALLETE.white,
+        accent: COLOR_PALLETE.correct,
+      },
+      description: {
+        textColor: COLOR_PALLETE.ligherGrey,
+      },
+    },
     container: {
       backgroundColor: COLOR_PALLETE.midGrey,
     },
@@ -125,5 +139,11 @@ export const DARK_THEME = {
       color: COLOR_PALLETE.offwhite,
     },
     referenceLineColor: COLOR_PALLETE.white,
+  },
+  challengeSummary: {
+    backgroundColor: COLOR_PALLETE.transparent,
+    labelColor: COLOR_PALLETE.offwhite,
+    valueColor: COLOR_PALLETE.correct,
+    borderColor: COLOR_PALLETE.correct,
   },
 };

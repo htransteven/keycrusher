@@ -177,7 +177,6 @@ export interface TeleprompterState {
   timer: number;
   prevPerformanceTime: number;
   teleprompter: {
-    cover: boolean;
     scrollOffsetY: number;
     fetchWords: number;
     lineStartWordIndex: number;
@@ -192,10 +191,9 @@ export interface TeleprompterState {
 const INITIAL_STATE: TeleprompterState = {
   active: false,
   wpm: 0,
-  timer: 60,
+  timer: 20,
   prevPerformanceTime: 0,
   teleprompter: {
-    cover: true,
     scrollOffsetY: 0,
     fetchWords: 50,
     lineStartWordIndex: 0,
@@ -294,7 +292,6 @@ const reducer = (
         active: true,
         teleprompter: {
           ...state.teleprompter,
-          cover: false,
         },
         prevPerformanceTime: action.payload.currentPerformanceTime,
       };
@@ -505,23 +502,19 @@ export const Teleprompter: React.FC = () => {
   }, [handleReset]);
 
   useEffect(() => {
-    if (state.teleprompter.cover && coverTimer <= 3) {
-      const coverTimerTick = setInterval(() => {
-        if (coverTimer === 0) {
-          dispatch({
-            type: TEXT_PROMPT_ACTIONS.START,
-            payload: { currentPerformanceTime: window.performance.now() },
-          });
-        } else {
-          setCoverTimer((prev) => prev - 1);
-        }
-      }, 1000);
+    if (coverTimer >= 4 || coverTimer <= 0) return;
+    const interval = setInterval(() => {
+      if (coverTimer === 1) {
+        dispatch({
+          type: TEXT_PROMPT_ACTIONS.START,
+          payload: { currentPerformanceTime: window.performance.now() },
+        });
+      }
+      setCoverTimer((prev) => --prev);
+    }, 1000);
 
-      return () => {
-        clearInterval(coverTimerTick);
-      };
-    }
-  }, [state.active, coverTimer, state.teleprompter.cover]);
+    return () => clearInterval(interval);
+  }, [state.active, coverTimer]);
 
   useEffect(() => {
     if (state.active) {
@@ -607,7 +600,7 @@ export const Teleprompter: React.FC = () => {
 
       if (target.value.charAt(target.value.length - 1) === " ") {
         if (target.value === " ") {
-          if (!state.teleprompter.cover) return;
+          if (coverTimer !== 4) return;
           setCoverTimer(3);
           return;
         }
@@ -639,10 +632,10 @@ export const Teleprompter: React.FC = () => {
     [
       state.telemetry.history,
       state.currentWordIndex,
-      state.teleprompter.cover,
       state.active,
       wordRef,
       nextWordRef,
+      coverTimer,
     ]
   );
 
@@ -738,7 +731,7 @@ export const Teleprompter: React.FC = () => {
             ) : null
           )}
         </TeleprompterBox>
-        {state.teleprompter.cover && (
+        {coverTimer > 0 && (
           <TeleprompterCover>
             {coverTimer > 3 ? "Are you ready?" : coverTimer}
           </TeleprompterCover>
@@ -792,19 +785,25 @@ export const Teleprompter: React.FC = () => {
           />
         </IconWrapper>
       </ControlBox>
-      <TelepromptStatus>
-        <TelepromptStatusData>
-          {state.wpm < 100 ? "0" : ""}
-          {state.wpm < 10 ? "0" : ""}
-          {isFinite(state.wpm) ? state.wpm : "0"} WPM
-        </TelepromptStatusData>
-        <TelepromptStatusData>
-          {state.timer < 10 ? "0" : ""}
-          {state.timer}s left
-        </TelepromptStatusData>
-      </TelepromptStatus>
+      {state.timer > 0 && (
+        <TelepromptStatus>
+          <TelepromptStatusData>
+            {state.wpm < 100 ? "0" : ""}
+            {state.wpm < 10 ? "0" : ""}
+            {isFinite(state.wpm) ? state.wpm : "0"} WPM
+          </TelepromptStatusData>
+          <TelepromptStatusData>
+            {state.timer < 10 ? "0" : ""}
+            {state.timer}s left
+          </TelepromptStatusData>
+        </TelepromptStatus>
+      )}
       {!state.active && state.timer === 0 && (
-        <PostChallengeStats {...state.telemetry} />
+        <PostChallengeStats
+          telemetry={state.telemetry}
+          wpm={state.wpm}
+          duration={INITIAL_STATE.timer}
+        />
       )}
     </Container>
   );
