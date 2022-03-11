@@ -1,27 +1,34 @@
-import React, { PureComponent, useState } from "react";
+import React, { useState } from "react";
 import {
   BarChart,
   Bar,
   Cell,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   LineChart,
   Line,
   ReferenceLine,
   Label,
 } from "recharts";
-import { ContentType } from "recharts/types/component/Label";
-import { CartesianViewBox, PolarViewBox } from "recharts/types/util/types";
 import styled, { useTheme } from "styled-components";
 import { Telemetry } from "../models/Telemetry";
 
 const Container = styled.div`
   width: 100%;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 10px;
+  margin: 10px 0;
+`;
+
+const GraphWrapper = styled.div`
+  border-radius: 5px;
   padding: 20px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  background-color: ${({ theme }) => theme.graphs.container.backgroundColor};
 `;
 
 interface GraphData {
@@ -83,113 +90,63 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
 
   return (
     <Container>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={data}
-          margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
-        >
-          <XAxis dataKey="char" stroke={theme.graphs.axis.color}>
-            <Label
-              position="bottom"
-              style={{ textAnchor: "middle" }}
-              fill={theme.graphs.axis.color}
-              fontSize={"0.8rem"}
-            >
-              Character
-            </Label>
-          </XAxis>
-          <YAxis
-            dataKey="averageRTT"
-            stroke={theme.graphs.axis.color}
-            unit={"ms"}
-          >
-            <Label
-              angle={270}
-              position="left"
-              offset={15}
-              style={{ textAnchor: "middle" }}
-              fill={theme.graphs.axis.color}
-              fontSize={"0.8rem"}
-            >
-              Average RTT (ms)
-            </Label>
-          </YAxis>
-          <Bar
-            dataKey="averageRTT"
-            onClick={(data) =>
-              setSelectedKey({ char: data.char, averageRTT: data.averageRTT })
-            }
-          >
-            {data.map((charTelemetry, index) => (
-              <Cell
-                key={`telemetry-graph-avgRTT-key-${charTelemetry.char}-${index}`}
-                cursor="pointer"
-                fill={
-                  charTelemetry.char === selectedKey?.char
-                    ? theme.graphs.data.active
-                    : theme.graphs.data.default
-                }
-              />
-            ))}
-          </Bar>
-          <ReferenceLine
-            isFront={true}
-            y={overallSumRTT / overallSumUsage}
-            label={
-              <Label
-                value={`Average RTT`}
-                fill={theme.graphs.referenceLineColor}
-                position={"insideBottomRight"}
-                fontSize={"0.6rem"}
-              />
-            }
-            stroke={theme.graphs.referenceLineColor}
-            strokeDasharray="3 3"
-            strokeWidth={1}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-      {selectedKey && (
+      <GraphWrapper>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart
-            data={selectedKeyData}
+          <BarChart
+            data={data}
             margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
           >
-            <XAxis dataKey="timestamp" stroke={theme.graphs.axis.color}>
+            <XAxis dataKey="char" stroke={theme.graphs.axis.color}>
               <Label
                 position="bottom"
                 style={{ textAnchor: "middle" }}
                 fill={theme.graphs.axis.color}
                 fontSize={"0.8rem"}
               >
-                Instance
+                Character
               </Label>
             </XAxis>
-            <YAxis dataKey="rtt" stroke={theme.graphs.axis.color} unit={"ms"}>
+            <YAxis
+              dataKey="averageRTT"
+              stroke={theme.graphs.axis.color}
+              unit={"ms"}
+            >
               <Label
                 angle={270}
                 position="left"
-                offset={15}
+                offset={20}
                 style={{ textAnchor: "middle" }}
                 fill={theme.graphs.axis.color}
                 fontSize={"0.8rem"}
               >
-                RTT Time (ms)
+                Average RTT (ms)
               </Label>
             </YAxis>
-            <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="rtt"
-              stroke={theme.textPrompt.correct}
-              activeDot={{ r: 8 }}
-            />
+            <Bar
+              dataKey="averageRTT"
+              onClick={(data) =>
+                setSelectedKey({ char: data.char, averageRTT: data.averageRTT })
+              }
+              radius={[2, 2, 0, 0]}
+            >
+              {data.map((charTelemetry, index) => (
+                <Cell
+                  key={`telemetry-graph-avgRTT-key-${charTelemetry.char}-${index}`}
+                  cursor="pointer"
+                  fill={
+                    charTelemetry.char === selectedKey?.char
+                      ? theme.graphs.data.active
+                      : theme.graphs.data.default
+                  }
+                />
+              ))}
+            </Bar>
             <ReferenceLine
               isFront={true}
-              y={selectedKey.averageRTT}
+              y={overallSumRTT / overallSumUsage}
               label={
                 <Label
-                  value={`Average RTT for key ${selectedKey.char}`}
+                  value={`Average RTT`}
                   fill={theme.graphs.referenceLineColor}
                   position={"insideBottomRight"}
                   fontSize={"0.6rem"}
@@ -199,8 +156,63 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
               strokeDasharray="3 3"
               strokeWidth={1}
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
+      </GraphWrapper>
+      {selectedKey && (
+        <GraphWrapper>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={selectedKeyData}
+              margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
+            >
+              <XAxis dataKey="timestamp" stroke={theme.graphs.axis.color}>
+                <Label
+                  position="bottom"
+                  style={{ textAnchor: "middle" }}
+                  fill={theme.graphs.axis.color}
+                  fontSize={"0.8rem"}
+                >
+                  Instance
+                </Label>
+              </XAxis>
+              <YAxis dataKey="rtt" stroke={theme.graphs.axis.color} unit={"ms"}>
+                <Label
+                  angle={270}
+                  position="left"
+                  offset={20}
+                  style={{ textAnchor: "middle" }}
+                  fill={theme.graphs.axis.color}
+                  fontSize={"0.8rem"}
+                >
+                  RTT Time (ms)
+                </Label>
+              </YAxis>
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="rtt"
+                stroke={theme.textPrompt.correct}
+                activeDot={{ r: 8 }}
+              />
+              <ReferenceLine
+                isFront={true}
+                y={selectedKey.averageRTT}
+                label={
+                  <Label
+                    value={`Average RTT for key ${selectedKey.char}`}
+                    fill={theme.graphs.referenceLineColor}
+                    position={"insideBottomRight"}
+                    fontSize={"0.6rem"}
+                  />
+                }
+                stroke={theme.graphs.referenceLineColor}
+                strokeDasharray="3 3"
+                strokeWidth={1}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </GraphWrapper>
       )}
     </Container>
   );

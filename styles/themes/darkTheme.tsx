@@ -1,5 +1,6 @@
 export const COLOR_PALLETE = {
   lightGrey: "#2f3943",
+  midGrey: "#28303a",
   darkGrey: "#222831",
   grey: "#393E46",
   navyBlue: "#162447",
@@ -35,6 +36,9 @@ export const DARK_THEME = {
     },
   },
   graphs: {
+    container: {
+      backgroundColor: COLOR_PALLETE.midGrey,
+    },
     data: {
       default: COLOR_PALLETE.baseBlue,
       active: COLOR_PALLETE.correct,
