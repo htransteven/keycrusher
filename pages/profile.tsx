@@ -5,7 +5,9 @@ import { Login } from "../components/Login";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { useUser } from "../contexts/UserContext";
 
-const Container = styled.div``;
+const Container = styled.div`
+  padding-top: 20px;
+`;
 
 const ProfileHeader = styled.div`
   width: 100%;
@@ -26,7 +28,11 @@ const ProfilePage = () => {
   const { user } = useUser();
 
   if (!user) {
-    return <Login />;
+    return (
+      <Container>
+        <Login />
+      </Container>
+    );
   }
 
   return (

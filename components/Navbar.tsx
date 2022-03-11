@@ -82,7 +82,7 @@ export const Navbar = () => {
         <AppTitle />
       </NavbarOptionsContainer>
       <NavbarOptionsContainer>
-        <NavbarIconWrapper>
+        <NavbarIconWrapper style={{ opacity: 0.5, cursor: "not-allowed" }}>
           <LeaderBoardIcon
             style={{
               height: "1.5rem",
@@ -100,7 +100,7 @@ export const Navbar = () => {
             />
           </NavbarIconWrapper>
         </Link>
-        <NavbarIconWrapper>
+        <NavbarIconWrapper style={{ opacity: 0.5, cursor: "not-allowed" }}>
           <SettingsIcon
             style={{
               height: "1.5rem",

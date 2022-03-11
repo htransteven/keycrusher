@@ -3,15 +3,16 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
 } from "firebase/auth";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { TextInput } from "./form/TextInput";
 import { Button } from "./form/Button";
 import { FormEventHandler, useCallback, useState } from "react";
 import { getUnixTime } from "date-fns";
 import GoogleIcon from "../assets/google-brands.svg";
+import { User } from "../models/User";
 
 const Container = styled.div`
   display: flex;
@@ -90,7 +91,7 @@ const GoogleIconWrapper = styled.a`
 `;
 
 export const Login = () => {
-  const { auth, firestore } = useFirebase();
+  const { auth, firestore, setFirebaseUser } = useFirebase();
   const [signUpForm, setSignUpForm] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -103,10 +104,46 @@ export const Login = () => {
     // Start a sign in process for an unauthenticated user.
     provider.addScope("profile");
     provider.addScope("email");
-    await signInWithRedirect(auth, provider);
+    //await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider).then((userCreds) => {
+      getDoc(doc(firestore, "users", userCreds.user.uid)).then((userDoc) => {
+        if (!userDoc.exists()) {
+          if (!userCreds.user.email)
+            throw new Error(
+              "The user from Google's redirect result has no email"
+            );
+          const now = getUnixTime(new Date());
+          const userPayload: User = {
+            username: userCreds.user.email.substring(
+              0,
+              userCreds.user.email.indexOf("@")
+            ),
+            email: userCreds.user.email,
+            lastLoggedIn: now,
+            created: now,
+          };
+
+          const credential = GoogleAuthProvider.credentialFromResult(userCreds);
+          if (credential) {
+            userPayload["oauth"] = {
+              providerId: credential.providerId,
+              idToken: credential.idToken,
+              accessToken: credential.accessToken,
+            };
+          }
+          setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
+        } else {
+          const now = getUnixTime(new Date());
+          updateDoc(doc(firestore, "users", userCreds.user.uid), {
+            lastLoggedIn: now,
+          });
+        }
+        setFirebaseUser(userCreds.user);
+      });
+    });
     // This will trigger a full page redirect away from your app
     // See FirebaseContext.tsx for capturing redirect results
-  }, [auth]);
+  }, [auth, firestore, setFirebaseUser]);
 
   const handleSignIn = useCallback(() => {
     if (email.length < 4 || !email.includes("@")) {
@@ -121,6 +158,7 @@ export const Login = () => {
         updateDoc(doc(firestore, "users", userCreds.user.uid), {
           lastLoggedIn: now,
         });
+        setFirebaseUser(userCreds.user);
       })
       .catch(function (error) {
         // Handle Errors here.
@@ -136,7 +174,7 @@ export const Login = () => {
         }
         console.log(error);
       });
-  }, [auth, email, firestore, password]);
+  }, [auth, email, firestore, password, setFirebaseUser]);
 
   /**
    * Handles the sign up button press.
@@ -157,6 +195,7 @@ export const Login = () => {
           lastLoggedIn: now,
           created: now,
         });
+        setFirebaseUser(userCreds.user);
       })
       .catch(function (error) {
         // Handle Errors here.
@@ -169,7 +208,7 @@ export const Login = () => {
         }
         console.log(error);
       });
-  }, [auth, email, firestore, password, username]);
+  }, [auth, email, firestore, password, setFirebaseUser, username]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
@@ -184,7 +223,7 @@ export const Login = () => {
     <Container>
       <Form onSubmit={handleSubmit}>
         <FormHeader>
-          <Title>LOGIN</Title>
+          <Title>{signUpForm ? "SIGN UP" : "LOGIN"}</Title>
           {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
         </FormHeader>
         {signUpForm && (
@@ -213,8 +252,8 @@ export const Login = () => {
           <GoogleIconWrapper onClick={handleGoogleSignIn}>
             <GoogleIcon
               style={{
-                height: "1.5rem",
-                width: "1.5rem",
+                height: "1rem",
+                width: "1rem",
               }}
             />
           </GoogleIconWrapper>

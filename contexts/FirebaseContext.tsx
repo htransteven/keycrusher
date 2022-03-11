@@ -20,7 +20,7 @@ import { User } from "../models/User";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcrT1jyxO17nfGPOwwFrvLTMCM_a290J4",
-  authDomain: "key-crusher.firebaseapp.com",
+  authDomain: "auth.keycrusher.com",
   projectId: "key-crusher",
   storageBucket: "key-crusher.appspot.com",
   messagingSenderId: "141071597239",
@@ -34,6 +34,7 @@ interface FirebaseContext {
   analytics: Analytics;
   firestore: Firestore;
   firebaseUser: FirebaseUser | null;
+  setFirebaseUser: (firebaseUser: FirebaseUser | null) => void;
 }
 
 const FirebaseContext = createContext<FirebaseContext | null>(null);
@@ -60,52 +61,19 @@ export const FirebaseProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     if (!auth) return;
-    const subscriber = auth.onAuthStateChanged((user) => setFirebaseUser(user));
-    return subscriber;
-  }, [auth]);
-
-  useEffect(() => {
-    if (!auth || !firestore) return;
-    // After returning from the redirect when your app initializes you can obtain the result
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        getDoc(doc(firestore, "users", result.user.uid)).then((userDoc) => {
-          if (!userDoc.exists()) {
-            if (!result.user.email)
-              throw new Error(
-                "The user from Google's redirect result has no email"
-              );
-            const now = getUnixTime(new Date());
-            const userPayload: User = {
-              username: result.user.email.substring(
-                0,
-                result.user.email.indexOf("@")
-              ),
-              email: result.user.email,
-              lastLoggedIn: now,
-              created: now,
-            };
-
-            const credential = GoogleAuthProvider.credentialFromResult(result);
-            if (credential) {
-              userPayload["oauth"] = {
-                providerId: credential.providerId,
-                idToken: credential.idToken,
-                accessToken: credential.accessToken,
-              };
-            }
-            setDoc(doc(firestore, "users", result.user.uid), userPayload);
-          }
-        });
+    const subscriber = auth.onAuthStateChanged((user) => {
+      if (user?.uid !== firebaseUser?.uid) {
+        setFirebaseUser(user);
       }
     });
-  }, [auth, firestore]);
+    return subscriber;
+  }, [auth, firebaseUser?.uid]);
 
   if (!analytics || !auth || !firestore) return null;
 
   return (
     <FirebaseContext.Provider
-      value={{ app, auth, analytics, firestore, firebaseUser }}
+      value={{ app, auth, analytics, firestore, firebaseUser, setFirebaseUser }}
     >
       {children}
     </FirebaseContext.Provider>
