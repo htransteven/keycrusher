@@ -19,6 +19,48 @@ const PageWrapper = styled.div`
   }
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  flex-flow: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 5px;
+`;
+
+const AlphaIndicator = styled.span`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.alphaIndicatorColor};
+  letter-spacing: 2px;
+  font-weight: bold;
+  opacity: 0.75;
+`;
+
+const Key = styled.span`
+  font-size: 2rem;
+  color: ${({ theme }) => theme.appTitle.keyColor};
+  margin-right: 0.2rem;
+`;
+const Crusher = styled.span`
+  font-size: 2rem;
+  font-weight: bold;
+  color: ${({ theme }) => theme.appTitle.crusherColor};
+`;
+
+const AppTitleWrapper = styled.div`
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-start;
+`;
+
+const AppTitle = () => {
+  return (
+    <AppTitleWrapper>
+      <Key>KEY</Key> <Crusher>CRUSHER</Crusher>
+    </AppTitleWrapper>
+  );
+};
+
 const Home: NextPage = () => {
   return (
     <PageWrapper>
@@ -30,6 +72,10 @@ const Home: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <HeaderContainer>
+        <AppTitle />
+        <AlphaIndicator>ALPHA</AlphaIndicator>
+      </HeaderContainer>
       <Teleprompter />
     </PageWrapper>
   );

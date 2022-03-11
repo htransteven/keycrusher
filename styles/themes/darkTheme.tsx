@@ -3,9 +3,8 @@ export const COLOR_PALLETE = {
   midGrey: "#28303a",
   darkGrey: "#222831",
   grey: "#393E46",
-  navyBlue: "#162447",
   baseBlue: "#30475E",
-  midnightBlue: "#1B1B2F",
+  royalBlue: "#2A5AC7",
   error: "#FF4C29",
   correct: "#29C7AC",
   test: "#BFF2E9",
@@ -18,6 +17,13 @@ export const COLOR_PALLETE = {
 
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
+  appTitle: {
+    keyColor: COLOR_PALLETE.offwhite,
+    keyBackgroundColor: COLOR_PALLETE.baseBlue,
+    crusherColor: COLOR_PALLETE.correct,
+  },
+  alphaIndicatorColor: COLOR_PALLETE.error,
+  betaIndicatorColor: COLOR_PALLETE.royalBlue,
   teleprompt: {
     backgroundColor: COLOR_PALLETE.baseBlue,
     textColor: COLOR_PALLETE.offwhite,
