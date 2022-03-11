@@ -146,7 +146,9 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
               y={overallSumRTT / overallSumUsage}
               label={
                 <Label
-                  value={`Average RTT`}
+                  value={`Average RTT = ${(
+                    overallSumRTT / overallSumUsage
+                  ).toFixed(0)} ms`}
                   fill={theme.graphs.referenceLineColor}
                   position={"insideBottomRight"}
                   fontSize={"0.6rem"}
@@ -200,7 +202,9 @@ export const PostChallengeStats: React.FC<Telemetry> = ({ history }) => {
                 y={selectedKey.averageRTT}
                 label={
                   <Label
-                    value={`Average RTT for key ${selectedKey.char}`}
+                    value={`Average RTT for key ${
+                      selectedKey.char
+                    } = ${selectedKey.averageRTT.toFixed(0)}ms`}
                     fill={theme.graphs.referenceLineColor}
                     position={"insideBottomRight"}
                     fontSize={"0.6rem"}

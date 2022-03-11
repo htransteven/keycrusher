@@ -175,8 +175,8 @@ export interface TeleprompterState {
   wpm: number;
   timer: number;
   prevPerformanceTime: number;
-  teleprompt: {
-    elem: HTMLDivElement | null;
+  teleprompter: {
+    cover: boolean;
     scrollOffsetY: number;
     fetchWords: number;
     lineStartWordIndex: number;
@@ -191,10 +191,10 @@ export interface TeleprompterState {
 const INITIAL_STATE: TeleprompterState = {
   active: false,
   wpm: 0,
-  timer: 15,
+  timer: 60,
   prevPerformanceTime: 0,
-  teleprompt: {
-    elem: null,
+  teleprompter: {
+    cover: true,
     scrollOffsetY: 0,
     fetchWords: 50,
     lineStartWordIndex: 0,
@@ -228,6 +228,9 @@ enum TEXT_PROMPT_ACTIONS {
 
 interface TeleprompteStartAction {
   type: TEXT_PROMPT_ACTIONS.START;
+  payload: {
+    currentPerformanceTime: number;
+  };
 }
 
 interface TeleprompterTimerTickAction {
@@ -263,7 +266,6 @@ interface TeleprompterNextWordAction {
 interface TeleprompterInputChangeAction {
   type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE;
   payload: {
-    active: boolean;
     value: string;
     selectionIndex: number;
     key?: string;
@@ -272,6 +274,7 @@ interface TeleprompterInputChangeAction {
 }
 
 type TeleprompterAction =
+  | TeleprompteStartAction
   | TeleprompterAddWordsAction
   | TeleprompterTimerTickAction
   | TeleprompterTimerResetAction
@@ -284,6 +287,16 @@ const reducer = (
   action: TeleprompterAction
 ): TeleprompterState => {
   switch (action.type) {
+    case TEXT_PROMPT_ACTIONS.START:
+      return {
+        ...state,
+        active: true,
+        teleprompter: {
+          ...state.teleprompter,
+          cover: false,
+        },
+        prevPerformanceTime: action.payload.currentPerformanceTime,
+      };
     case TEXT_PROMPT_ACTIONS.RESET:
       return { ...INITIAL_STATE };
     case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
@@ -311,8 +324,8 @@ const reducer = (
       const baseWordIndex = Object.keys(state.telemetry.history).length;
       return {
         ...state,
-        teleprompt: {
-          ...state.teleprompt,
+        teleprompter: {
+          ...state.teleprompter,
           fetchWords: 0,
         },
         telemetry: {
@@ -344,11 +357,11 @@ const reducer = (
         // new line
         return {
           ...state,
-          teleprompt: {
-            ...state.teleprompt,
+          teleprompter: {
+            ...state.teleprompter,
             scrollOffsetY: action.payload.nextWordElem?.offsetTop,
             fetchWords: Math.floor(
-              (state.currentWordIndex - state.teleprompt.lineStartWordIndex) *
+              (state.currentWordIndex - state.teleprompter.lineStartWordIndex) *
                 1.5
             ),
             lineStartWordIndex: state.currentWordIndex + 1,
@@ -424,7 +437,6 @@ const reducer = (
       return {
         ...state,
         prevPerformanceTime: action.payload.currentPerformanceTime,
-        active: action.payload.active,
         userInput: action.payload.value,
         currentCharIndex: action.payload.selectionIndex,
         telemetry: {
@@ -446,8 +458,15 @@ export const Teleprompter: React.FC = () => {
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
   const [nextWordRef, setNextWordRef] = useState<HTMLSpanElement | null>(null);
-  const [coverTeleprompt, setCoverTeleprompt] = useState(true);
+  const [coverTimer, setCoverTimer] = useState(4);
   const [resetSpinCounter, setResetSpinCounter] = useState(0);
+
+  const handleReset = useCallback(() => {
+    dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
+    setTimeout(() => inputRef?.current?.focus(), 100);
+    setResetSpinCounter((prev) => prev + 1);
+    setCoverTimer(4);
+  }, [dispatch, setTimeout, setResetSpinCounter]);
 
   useEffect(() => {
     const handleGlobalReset = (e: KeyboardEvent) => {
@@ -455,9 +474,7 @@ export const Teleprompter: React.FC = () => {
 
       switch (e.key) {
         case " ": {
-          dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
-          setTimeout(() => inputRef?.current?.focus(), 100);
-          setResetSpinCounter((prev) => prev + 1);
+          handleReset();
         }
         default: {
           return;
@@ -473,6 +490,25 @@ export const Teleprompter: React.FC = () => {
   }, [inputRef.current]);
 
   useEffect(() => {
+    if (state.teleprompter.cover && coverTimer <= 3) {
+      const coverTimerTick = setInterval(() => {
+        if (coverTimer === 0) {
+          dispatch({
+            type: TEXT_PROMPT_ACTIONS.START,
+            payload: { currentPerformanceTime: window.performance.now() },
+          });
+        } else {
+          setCoverTimer((prev) => prev - 1);
+        }
+      }, 1000);
+
+      return () => {
+        clearInterval(coverTimerTick);
+      };
+    }
+  }, [state.active, coverTimer]);
+
+  useEffect(() => {
     if (state.active) {
       const timerTick = setInterval(
         () => dispatch({ type: TEXT_PROMPT_ACTIONS.TIMER_TICK }),
@@ -486,11 +522,11 @@ export const Teleprompter: React.FC = () => {
   }, [state.active]);
 
   useEffect(() => {
-    if (state.teleprompt.fetchWords === 0) return;
+    if (state.teleprompter.fetchWords === 0) return;
 
     const getMoreWords = async () => {
       const res = await fetch(
-        `/api/words?count=${state.teleprompt.fetchWords}`
+        `/api/words?count=${state.teleprompter.fetchWords}`
       );
 
       if (!res.ok) {
@@ -507,7 +543,7 @@ export const Teleprompter: React.FC = () => {
     };
 
     getMoreWords();
-  }, [state.teleprompt.fetchWords]);
+  }, [state.teleprompter.fetchWords]);
 
   const extractCursorRefPosition = useCallback(
     (
@@ -555,7 +591,11 @@ export const Teleprompter: React.FC = () => {
       const selectionStart = target.selectionStart || 0;
 
       if (target.value.charAt(target.value.length - 1) === " ") {
-        if (target.value === " ") return;
+        if (target.value === " ") {
+          if (!state.teleprompter.cover) return;
+          setCoverTimer(3);
+          return;
+        }
         dispatch({
           type: TEXT_PROMPT_ACTIONS.NEXT_WORD,
           payload: {
@@ -569,10 +609,10 @@ export const Teleprompter: React.FC = () => {
       ) {
         return;
       } else {
+        if (!state.active) return;
         dispatch({
           type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
           payload: {
-            active: state.timer > 0,
             value: target.value,
             selectionIndex: selectionStart,
             key: key === null ? undefined : key,
@@ -649,7 +689,7 @@ export const Teleprompter: React.FC = () => {
         <TeleprompterBox>
           {cursorPosition && <Cursor style={cursorPosition} />}
           {Object.keys(state.telemetry.history).map((wKey, wIndex) =>
-            wIndex >= state.teleprompt.lineStartWordIndex ? (
+            wIndex >= state.teleprompter.lineStartWordIndex ? (
               <TelepromptWord
                 key={`teleprompt-${wIndex}`}
                 ref={(elem) => onWordRefChange(elem, wIndex)}
@@ -669,8 +709,10 @@ export const Teleprompter: React.FC = () => {
             ) : null
           )}
         </TeleprompterBox>
-        {coverTeleprompt && (
-          <TeleprompterCover>Are you ready?</TeleprompterCover>
+        {state.teleprompter.cover && (
+          <TeleprompterCover>
+            {coverTimer > 3 ? "Are you ready?" : coverTimer}
+          </TeleprompterCover>
         )}
       </TeleprompterWrapper>
       <ControlBox>
@@ -680,7 +722,7 @@ export const Teleprompter: React.FC = () => {
             onKeyUp={handleKeyUp}
             onChange={handleChange}
             value={state.userInput}
-            placeholder={state.active ? "" : "Type to start challenge!"}
+            placeholder={state.active ? "" : "Type here..."}
             disabled={state.timer === 0}
             autoComplete="off"
             autoCorrect="off"
@@ -692,7 +734,15 @@ export const Teleprompter: React.FC = () => {
               display: !state.active ? "" : "none",
             }}
           >
-            Press <KeyCap>Ctrl</KeyCap> + <KeyCap>Space</KeyCap> to restart
+            {state.teleprompter.cover ? (
+              <>
+                Press <KeyCap>Space</KeyCap> to start
+              </>
+            ) : (
+              <>
+                Press <KeyCap>Ctrl</KeyCap> + <KeyCap>Space</KeyCap> to restart
+              </>
+            )}
           </InputInstruction>
         </InputWrapper>
         <Timer>
@@ -704,12 +754,7 @@ export const Teleprompter: React.FC = () => {
           {state.timer < 10 ? "0" : ""}
           {state.timer}
         </Timer>
-        <IconWrapper
-          onClick={() => {
-            dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
-            setResetSpinCounter((prev) => prev + 1);
-          }}
-        >
+        <IconWrapper onClick={handleReset}>
           <ResetIcon
             style={{
               height: "100%",
