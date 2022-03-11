@@ -1,6 +1,6 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import { FirebaseProvider } from "./contexts/FirebaseContext";
+import { FirebaseProvider } from "../contexts/FirebaseContext";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
 import { DARK_THEME } from "../styles/themes/darkTheme";
 
