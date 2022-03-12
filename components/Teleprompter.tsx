@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+import { doc, setDoc } from "firebase/firestore";
 import React, {
   ChangeEventHandler,
   KeyboardEventHandler,
@@ -9,6 +11,7 @@ import React, {
 } from "react";
 import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
+import { useFirebase } from "../contexts/FirebaseContext";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { KeyCap } from "./Keycap";
@@ -302,6 +305,7 @@ const reducer = (
         return {
           ...state,
           active: false,
+          timer: 0,
         };
       }
 
@@ -465,6 +469,7 @@ const reducer = (
 
 export const Teleprompter: React.FC = () => {
   const theme = useTheme();
+  const { firestore, firebaseUser } = useFirebase();
   const [state, dispatch] = useReducer(reducer, { ...INITIAL_STATE });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
@@ -517,17 +522,48 @@ export const Teleprompter: React.FC = () => {
   }, [state.active, coverTimer]);
 
   useEffect(() => {
-    if (state.active) {
-      const timerTick = setInterval(
-        () => dispatch({ type: TEXT_PROMPT_ACTIONS.TIMER_TICK }),
-        1000
-      );
+    if (!state.active) return;
+    const timerTick = setInterval(
+      () => dispatch({ type: TEXT_PROMPT_ACTIONS.TIMER_TICK }),
+      1000
+    );
 
-      return () => {
-        clearInterval(timerTick);
-      };
-    }
-  }, [state.active]);
+    return () => {
+      clearInterval(timerTick);
+    };
+  }, [firebaseUser, firestore, state.active, state.timer]);
+
+  useEffect(() => {
+    if (state.active || state.timer > 0 || !firebaseUser) return;
+    // challenge completed, store data
+    const now = Date.now();
+    setDoc(
+      doc(
+        firestore,
+        `stats/${firebaseUser.uid}/history`,
+        `${format(now, "MM-dd-yyyy hh:mm:ss")}`
+      ),
+      {
+        wpm: state.wpm,
+        duration: INITIAL_STATE.timer,
+        telemetry: state.telemetry,
+        completed: now,
+      }
+    )
+      .then((doc) => {
+        console.log(doc);
+      })
+      .catch((error) => {
+        alert(error);
+      });
+  }, [
+    firebaseUser,
+    firestore,
+    state.active,
+    state.telemetry,
+    state.timer,
+    state.wpm,
+  ]);
 
   useEffect(() => {
     if (state.teleprompter.fetchWords === 0) return;

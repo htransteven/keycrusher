@@ -117,7 +117,7 @@ export const Login = () => {
               throw new Error(
                 "The user from Google's redirect result has no email"
               );
-            const now = getUnixTime(new Date());
+            const now = Date.now();
             const userPayload: User = {
               username: userCreds.user.email.substring(
                 0,
@@ -139,7 +139,7 @@ export const Login = () => {
             }
             setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
           } else {
-            const now = getUnixTime(new Date());
+            const now = Date.now();
             updateDoc(doc(firestore, "users", userCreds.user.uid), {
               lastLoggedIn: now,
             });
@@ -173,7 +173,7 @@ export const Login = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCreds) => {
         setWaiting(false);
-        const now = getUnixTime(new Date());
+        const now = Date.now();
         updateDoc(doc(firestore, "users", userCreds.user.uid), {
           lastLoggedIn: now,
         });
@@ -210,7 +210,7 @@ export const Login = () => {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCreds) => {
         setWaiting(false);
-        const now = getUnixTime(new Date());
+        const now = Date.now();
         setDoc(doc(firestore, "users", userCreds.user.uid), {
           username,
           email,
