@@ -1,6 +1,6 @@
 export const COLOR_PALLETE = {
   lightGrey: "#2f3943",
-  ligherGrey: "#878787",
+  lighterGrey: "#878787",
   midGrey: "#28303a",
   darkGrey: "#222831",
   grey: "#393E46",
@@ -20,7 +20,7 @@ export const COLOR_PALLETE = {
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
   primaryTextColor: COLOR_PALLETE.white,
-  secondaryText: COLOR_PALLETE.ligherGrey,
+  secondaryText: COLOR_PALLETE.lighterGrey,
   profile: {
     keycard: {
       backgroundColor: COLOR_PALLETE.lightGrey,
@@ -101,7 +101,7 @@ export const DARK_THEME = {
         },
         helper: {
           backgroundColor: COLOR_PALLETE.transparent,
-          textColor: COLOR_PALLETE.ligherGrey,
+          textColor: COLOR_PALLETE.lighterGrey,
           borderColor: COLOR_PALLETE.transparent,
         },
       },
@@ -141,7 +141,7 @@ export const DARK_THEME = {
         accent: COLOR_PALLETE.correct,
       },
       description: {
-        textColor: COLOR_PALLETE.ligherGrey,
+        textColor: COLOR_PALLETE.lighterGrey,
       },
     },
     container: {
