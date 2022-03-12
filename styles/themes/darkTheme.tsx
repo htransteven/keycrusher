@@ -22,10 +22,16 @@ export const DARK_THEME = {
   primaryTextColor: COLOR_PALLETE.white,
   secondaryText: COLOR_PALLETE.ligherGrey,
   profile: {
+    keycard: {
+      backgroundColor: COLOR_PALLETE.lightGrey,
+      labelColor: COLOR_PALLETE.offwhite,
+      textColor: COLOR_PALLETE.white,
+    },
     history: {
       backgroundColor: COLOR_PALLETE.midGrey,
       textColor: COLOR_PALLETE.white,
       secondaryTextColor: COLOR_PALLETE.offwhite,
+      dividerColor: COLOR_PALLETE.correct,
       hover: {
         backgroundColor: COLOR_PALLETE.baseBlue,
       },

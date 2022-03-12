@@ -10,7 +10,6 @@ import { useFirebase } from "../contexts/FirebaseContext";
 import { TextInput } from "./form/TextInput";
 import { Button } from "./form/Button";
 import { FormEventHandler, useCallback, useState } from "react";
-import { getUnixTime } from "date-fns";
 import GoogleIcon from "../assets/google-brands.svg";
 import { User } from "../models/User";
 import { Loading } from "./Loading";
@@ -20,6 +19,7 @@ const Container = styled.div`
   flex-flow: column nowrap;
   align-items: center;
   justify-content: center;
+  margin: 35px 0px;
 `;
 
 const Form = styled.form`
