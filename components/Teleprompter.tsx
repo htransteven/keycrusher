@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import React, {
   ChangeEventHandler,
   KeyboardEventHandler,
@@ -12,6 +12,7 @@ import React, {
 import styled, { useTheme } from "styled-components";
 import ResetIcon from "../assets/arrows-rotate-solid.svg";
 import { useFirebase } from "../contexts/FirebaseContext";
+import { DailyChallenge } from "../models/DailyChallenge";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { KeyCap } from "./Keycap";
@@ -175,6 +176,7 @@ interface CursorPosition {
 }
 
 export interface TeleprompterState {
+  mode: TeleprompterMode;
   active: boolean;
   wpm: number;
   completed?: number;
@@ -194,6 +196,7 @@ export interface TeleprompterState {
 }
 
 const INITIAL_STATE: TeleprompterState = {
+  mode: "default",
   active: false,
   wpm: 0,
   duration: 20,
@@ -302,7 +305,7 @@ const reducer = (
         prevPerformanceTime: action.payload.currentPerformanceTime,
       };
     case TEXT_PROMPT_ACTIONS.RESET:
-      return { ...INITIAL_STATE };
+      return { ...INITIAL_STATE, mode: state.mode };
     case TEXT_PROMPT_ACTIONS.TIMER_TICK: {
       if (state.timer <= 0) {
         return {
@@ -469,10 +472,16 @@ const reducer = (
   }
 };
 
-export const Teleprompter: React.FC = () => {
+type TeleprompterMode = "default" | "daily";
+
+interface Teleprompter {
+  mode?: TeleprompterMode;
+}
+
+export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
   const theme = useTheme();
   const { firestore, firebaseUser } = useFirebase();
-  const [state, dispatch] = useReducer(reducer, { ...INITIAL_STATE });
+  const [state, dispatch] = useReducer(reducer, { ...INITIAL_STATE, mode });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
@@ -563,7 +572,7 @@ export const Teleprompter: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (state.teleprompter.fetchWords === 0) return;
+    if (state.teleprompter.fetchWords === 0 || state.mode === "daily") return;
 
     const getMoreWords = async () => {
       const res = await fetch(
@@ -584,7 +593,39 @@ export const Teleprompter: React.FC = () => {
     };
 
     getMoreWords();
-  }, [state.teleprompter.fetchWords]);
+  }, [state.mode, state.teleprompter.fetchWords]);
+
+  // Fetch Daily Words
+  useEffect(() => {
+    if (
+      state.mode !== "daily" ||
+      Object.keys(state.telemetry.history).length > 0
+    )
+      return;
+
+    const loadDailyChallenge = async () => {
+      getDoc(doc(firestore, "daily", format(Date.now(), "MM-dd-yyyy"))).then(
+        (doc) => {
+          if (!doc.exists()) {
+            alert("failed to retrieve daily challenge");
+            return;
+          }
+
+          const dailyChallange = doc.data() as DailyChallenge;
+          console.log(dailyChallange.text);
+
+          dispatch({
+            type: TEXT_PROMPT_ACTIONS.ADD_WORDS,
+            payload: {
+              words: dailyChallange.text.split(" "),
+            },
+          });
+        }
+      );
+    };
+
+    loadDailyChallenge();
+  }, [firestore, state.active, state.mode, state.teleprompter.fetchWords]);
 
   const extractCursorRefPosition = useCallback(
     (
