@@ -21,6 +21,18 @@ export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
   primaryTextColor: COLOR_PALLETE.white,
   secondaryText: COLOR_PALLETE.lighterGrey,
+  navbar: {
+    primaryTextColor: COLOR_PALLETE.white,
+    accentColor: COLOR_PALLETE.correct,
+    backgroundColor: COLOR_PALLETE.midGrey,
+    appTitle: {
+      keyColor: COLOR_PALLETE.offwhite,
+      keyBackgroundColor: COLOR_PALLETE.baseBlue,
+      crusherColor: COLOR_PALLETE.correct,
+    },
+    alphaIndicatorColor: COLOR_PALLETE.error,
+    betaIndicatorColor: COLOR_PALLETE.royalBlue,
+  },
   profile: {
     keycard: {
       backgroundColor: COLOR_PALLETE.lightGrey,
@@ -57,6 +69,11 @@ export const DARK_THEME = {
     },
     button: {
       variants: {
+        disabled: {
+          backgroundColor: COLOR_PALLETE.lightGrey,
+          textColor: COLOR_PALLETE.lighterGrey,
+          borderColor: COLOR_PALLETE.lighterGrey,
+        },
         default: {
           backgroundColor: COLOR_PALLETE.correct,
           textColor: COLOR_PALLETE.white,
@@ -101,16 +118,11 @@ export const DARK_THEME = {
         },
         helper: {
           backgroundColor: COLOR_PALLETE.transparent,
-          textColor: COLOR_PALLETE.lighterGrey,
+          textColor: COLOR_PALLETE.offwhite,
           borderColor: COLOR_PALLETE.transparent,
         },
       },
     },
-  },
-  appTitle: {
-    keyColor: COLOR_PALLETE.offwhite,
-    keyBackgroundColor: COLOR_PALLETE.baseBlue,
-    crusherColor: COLOR_PALLETE.correct,
   },
   keyCap: {
     textColor: COLOR_PALLETE.darkGrey,
@@ -119,8 +131,6 @@ export const DARK_THEME = {
       backgroundColor: COLOR_PALLETE.correct,
     },
   },
-  alphaIndicatorColor: COLOR_PALLETE.error,
-  betaIndicatorColor: COLOR_PALLETE.royalBlue,
   teleprompt: {
     backgroundColor: COLOR_PALLETE.baseBlue,
     textColor: COLOR_PALLETE.offwhite,

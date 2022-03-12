@@ -62,7 +62,7 @@ const FormSubmitOptions = styled.div`
 const Title = styled.span`
   font-size: 2rem;
   letter-spacing: 0.2rem;
-  color: ${({ theme }) => theme.appTitle.crusherColor};
+  color: ${({ theme }) => theme.navbar.appTitle.crusherColor};
   font-weight: bold;
 `;
 
@@ -235,7 +235,13 @@ export const Login = () => {
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
+    if (email.length === 0 || password.length === 0) {
+      return;
+    }
     if (signUpForm) {
+      if (username.length === 0) {
+        return;
+      }
       handleSignUp();
     } else {
       handleSignIn();
@@ -291,6 +297,11 @@ export const Login = () => {
               style={{ alignSelf: "flex-end" }}
               variant="default_inverse"
               type="submit"
+              disabled={
+                (signUpForm && username.length === 0) ||
+                email.length === 0 ||
+                password.length === 0
+              }
             >
               {signUpForm ? "Sign up" : "Log in"}
             </Button>

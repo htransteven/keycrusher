@@ -129,12 +129,17 @@ export const UserHistory = () => {
                 ).toFixed(2)}%`}
               />
               <Data label="Mistakes" value={summary.telemetry.numErrors} />
-              <Data
-                label="Challenge Duration"
-                value={`${summary.challengeDuration}${
-                  summary.mode === "default" ? "s" : "ms"
-                }`}
-              />
+              {summary.mode === "daily" ? (
+                <Data
+                  label="Challenge Duration"
+                  value={`${(summary.challengeDuration / 1000).toFixed(2)}s`}
+                />
+              ) : (
+                <Data
+                  label="Challenge Duration"
+                  value={`${summary.challengeDuration}s`}
+                />
+              )}
             </HistoryEntryRight>
           </HistoryEntry>
         ))}

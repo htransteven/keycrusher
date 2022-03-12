@@ -911,7 +911,11 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
         </TeleprompterBox>
         {coverTimer > 0 && (
           <TeleprompterCover>
-            {coverTimer > 3 ? "Are you ready?" : coverTimer}
+            {coverTimer > 3
+              ? state.mode === "daily"
+                ? "Daily Challenge"
+                : "Are you ready?"
+              : coverTimer}
           </TeleprompterCover>
         )}
       </TeleprompterWrapper>
@@ -928,7 +932,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
                 : coverTimer > 3
                 ? "Press SPACE to start"
                 : state.mode == "daily"
-                ? "Daily challenge complete!"
+                ? ""
                 : "Press CTRL + SPACE to restart"
             }
             disabled={challengeTimer === 0}

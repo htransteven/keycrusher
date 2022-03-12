@@ -35,6 +35,11 @@ const StyledButton = styled.button<{
   &:disabled {
     opacity: 0.8;
     cursor: not-allowed;
+    outline: 1px solid
+      ${({ theme }) => theme.form.button.variants.disabled.borderColor};
+    background-color: ${({ theme }) =>
+      theme.form.button.variants.disabled.backgroundColor};
+    color: ${({ theme }) => theme.form.button.variants.disabled.textColor};
   }
 `;
 

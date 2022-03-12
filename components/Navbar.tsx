@@ -3,37 +3,69 @@ import styled from "styled-components";
 import ProfileIcon from "../assets/user-solid.svg";
 import SettingsIcon from "../assets/gear-solid.svg";
 import LeaderBoardIcon from "../assets/list-ol-solid.svg";
+import { useRouter } from "next/router";
 
 const NavbarContainer = styled.div`
   display: flex;
-  flex-flow: row nowrap;
-  align-items: flex-end;
+  flex-flow: row wrap;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 20px;
 `;
 
 const NavbarOptionsContainer = styled.div`
   display: flex;
-  flex-flow: row nowrap;
+  flex-flow: row wrap;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 10px;
 `;
 
-const NavbarIconWrapper = styled.a`
+const NavbarTextOptionWrapper = styled.a<{ active?: boolean }>`
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border-radius: 3px;
+  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+
+  transition: 0.3s all;
+  border: 1px solid
+    ${({ theme, active }) =>
+      active ? theme.navbar.accentColor : "transparent"};
+  color: ${({ theme, active }) =>
+    active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
+  background-color: ${({ theme }) => theme.navbar.backgroundColor};
+`;
+
+const NavbarTextOption = styled.span`
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const NavbarIconWrapper = styled.a<{ active?: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px;
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  color: ${({ theme }) => theme.teleprompt.textColor};
-  background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
+  border: 1px solid
+    ${({ theme, active }) =>
+      active ? theme.navbar.accentColor : "transparent"};
+  color: ${({ theme, active }) =>
+    active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
+  color: ${({ theme }) => theme.navbar.primaryTextColor};
+  background-color: ${({ theme }) => theme.navbar.backgroundColor};
 `;
 
 const AlphaIndicator = styled.span`
   font-size: 0.8rem;
-  color: ${({ theme }) => theme.alphaIndicatorColor};
+  color: ${({ theme }) => theme.navbar.alphaIndicatorColor};
   letter-spacing: 2px;
   font-weight: bold;
   opacity: 0.75;
@@ -41,13 +73,13 @@ const AlphaIndicator = styled.span`
 
 const Key = styled.span`
   font-size: 2rem;
-  color: ${({ theme }) => theme.appTitle.keyColor};
+  color: ${({ theme }) => theme.navbar.appTitle.keyColor};
   margin-right: 0.2rem;
 `;
 const Crusher = styled.span`
   font-size: 2rem;
   font-weight: bold;
-  color: ${({ theme }) => theme.appTitle.crusherColor};
+  color: ${({ theme }) => theme.navbar.appTitle.crusherColor};
 `;
 
 const AppTitleContainer = styled.a`
@@ -76,12 +108,18 @@ const AppTitle = () => {
 };
 
 export const Navbar = () => {
+  const router = useRouter();
   return (
     <NavbarContainer>
       <NavbarOptionsContainer>
         <AppTitle />
       </NavbarOptionsContainer>
       <NavbarOptionsContainer>
+        <Link href={"/daily"} passHref>
+          <NavbarTextOptionWrapper active={router.asPath.includes("/daily")}>
+            <NavbarTextOption>Daily Challenge</NavbarTextOption>
+          </NavbarTextOptionWrapper>
+        </Link>
         <NavbarIconWrapper style={{ opacity: 0.5, cursor: "not-allowed" }}>
           <LeaderBoardIcon
             style={{
@@ -91,7 +129,7 @@ export const Navbar = () => {
           />
         </NavbarIconWrapper>
         <Link href={"/profile"} passHref>
-          <NavbarIconWrapper>
+          <NavbarIconWrapper active={router.asPath.includes("/profile")}>
             <ProfileIcon
               style={{
                 height: "1.5rem",
