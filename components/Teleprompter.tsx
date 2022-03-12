@@ -177,6 +177,8 @@ interface CursorPosition {
 export interface TeleprompterState {
   active: boolean;
   wpm: number;
+  completed?: number;
+  duration: number;
   timer: number;
   prevPerformanceTime: number;
   teleprompter: {
@@ -194,6 +196,7 @@ export interface TeleprompterState {
 const INITIAL_STATE: TeleprompterState = {
   active: false,
   wpm: 0,
+  duration: 20,
   timer: 20,
   prevPerformanceTime: 0,
   teleprompter: {
@@ -306,6 +309,7 @@ const reducer = (
           ...state,
           active: false,
           timer: 0,
+          completed: Date.now(),
         };
       }
 
@@ -313,9 +317,7 @@ const reducer = (
       return {
         ...state,
         wpm: Math.round(
-          state.telemetry.numCorrect /
-            5 /
-            ((INITIAL_STATE.timer - state.timer) / 60)
+          state.telemetry.numCorrect / 5 / ((state.duration - state.timer) / 60)
         ),
         timer: state.timer - 1,
       };
@@ -537,19 +539,12 @@ export const Teleprompter: React.FC = () => {
     if (state.active || state.timer > 0 || !firebaseUser) return;
     // challenge completed, store data
     const now = Date.now();
-    setDoc(
-      doc(
-        firestore,
-        `stats/${firebaseUser.uid}/history`,
-        `${format(now, "MM-dd-yyyy hh:mm:ss")}`
-      ),
-      {
-        wpm: state.wpm,
-        duration: INITIAL_STATE.timer,
-        telemetry: state.telemetry,
-        completed: now,
-      }
-    )
+    setDoc(doc(firestore, `stats/${firebaseUser.uid}/history`, `${now}`), {
+      wpm: state.wpm,
+      duration: state.duration,
+      telemetry: state.telemetry,
+      completed: state.completed,
+    })
       .then((doc) => {
         console.log(doc);
       })
@@ -560,6 +555,8 @@ export const Teleprompter: React.FC = () => {
     firebaseUser,
     firestore,
     state.active,
+    state.completed,
+    state.duration,
     state.telemetry,
     state.timer,
     state.wpm,
@@ -834,11 +831,12 @@ export const Teleprompter: React.FC = () => {
           </TelepromptStatusData>
         </TelepromptStatus>
       )}
-      {!state.active && state.timer === 0 && (
+      {state.completed && state.timer === 0 && (
         <PostChallengeStats
           telemetry={state.telemetry}
           wpm={state.wpm}
-          duration={INITIAL_STATE.timer}
+          completed={state.completed}
+          duration={state.duration}
         />
       )}
     </Container>

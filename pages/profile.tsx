@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Button } from "../components/form/Button";
 import { Loading } from "../components/Loading";
 import { Login } from "../components/Login";
+import { UserHistory } from "../components/UserHistory";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { useUser } from "../contexts/UserContext";
 
@@ -42,12 +43,15 @@ const ProfilePage = () => {
         {!user && loadingUser && <Loading value="LOADING USER" />}
         {!user && !loadingUser && <Login />}
         {user && (
-          <ProfileHeader>
-            <Title>Logged in as {user.username}</Title>
-            <Button variant={"negative"} onClick={() => auth.signOut()}>
-              Sign out
-            </Button>
-          </ProfileHeader>
+          <>
+            <ProfileHeader>
+              <Title>Logged in as {user.username}</Title>
+              <Button variant={"negative"} onClick={() => auth.signOut()}>
+                Sign out
+              </Button>
+            </ProfileHeader>
+            <UserHistory />
+          </>
         )}
       </Container>
     </>

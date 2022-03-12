@@ -21,6 +21,16 @@ export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
   primaryTextColor: COLOR_PALLETE.white,
   secondaryText: COLOR_PALLETE.ligherGrey,
+  profile: {
+    history: {
+      backgroundColor: COLOR_PALLETE.midGrey,
+      textColor: COLOR_PALLETE.white,
+      secondaryTextColor: COLOR_PALLETE.offwhite,
+      hover: {
+        backgroundColor: COLOR_PALLETE.baseBlue,
+      },
+    },
+  },
   tooltip: {
     backgroundColor: COLOR_PALLETE.baseBlue,
     textColor: COLOR_PALLETE.offwhite,
