@@ -6,7 +6,7 @@ export const COLOR_PALLETE = {
   grey: "#393E46",
   baseBlue: "#30475E",
   royalBlue: "#2A5AC7",
-  error: "#FF4C29",
+  error: "#F05454",
   correct: "#29C7AC",
   test: "#BFF2E9",
   white: "#f2f2f2",

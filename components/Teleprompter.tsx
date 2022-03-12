@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import Link from "next/link";
 import React, {
   ChangeEventHandler,
   KeyboardEventHandler,
@@ -100,6 +101,7 @@ const ControlBox = styled.div`
 
 const TelepromptStatus = styled.span`
   display: flex;
+  flex-flow: row wrap;
   gap: 10px;
 `;
 
@@ -978,21 +980,36 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
           />
         </IconWrapper>
       </ControlBox>
-      {state.active && (
-        <TelepromptStatus>
-          <TelepromptStatusData>
-            {state.wpm < 100 ? "0" : ""}
-            {state.wpm < 10 ? "0" : ""}
-            {isFinite(state.wpm) ? state.wpm : "0"} WPM
-          </TelepromptStatusData>
-          {state.mode === "default" && (
+      <TelepromptStatus>
+        {state.active && (
+          <>
             <TelepromptStatusData>
-              {challengeTimer < 10 ? "0" : ""}
-              {challengeTimer}s left
+              {state.wpm < 100 ? "0" : ""}
+              {state.wpm < 10 ? "0" : ""}
+              {isFinite(state.wpm) ? state.wpm : "0"} WPM
             </TelepromptStatusData>
-          )}
-        </TelepromptStatus>
-      )}
+            {state.mode === "default" && (
+              <TelepromptStatusData>
+                {challengeTimer < 10 ? "0" : ""}
+                {challengeTimer}s left
+              </TelepromptStatusData>
+            )}
+          </>
+        )}
+        {!firebaseUser && (
+          <Link href={"/profile"} passHref>
+            <TelepromptStatusData
+              style={{
+                backgroundColor: theme.teleprompt.error,
+                cursor: "pointer",
+                whiteSpace: "normal",
+              }}
+            >
+              Click here to login and save your attempts!
+            </TelepromptStatusData>
+          </Link>
+        )}
+      </TelepromptStatus>
       {state.time.unix.endTime !== 0 && (
         <PostChallengeStats
           mode={state.mode}
