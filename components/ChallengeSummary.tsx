@@ -51,9 +51,11 @@ const Data: React.FC<{ label: string; value: React.ReactNode }> = ({
 };
 
 export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
+  mode,
   wpm,
-  duration,
+  challengeDuration,
   telemetry,
+  time,
 }) => {
   const { numCorrect, numErrors } = telemetry;
   return (
@@ -64,7 +66,16 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
         value={`${((numCorrect / (numCorrect + numErrors)) * 100).toFixed(2)}%`}
       />
       <Data label="Mistakes" value={numErrors} />
-      <Data label="Challenge Duration" value={`${duration}s`} />
+      <Data
+        label="Challenge Duration"
+        value={
+          mode === "default"
+            ? `${challengeDuration}s`
+            : `${(
+                time.performance.endTime - time.performance.startTime
+              ).toFixed(2)}ms`
+        }
+      />
     </Container>
   );
 };

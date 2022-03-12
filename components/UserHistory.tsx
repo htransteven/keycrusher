@@ -95,7 +95,7 @@ export const UserHistory = () => {
     getDocs(
       query(
         collection(firestore, `stats/${firebaseUser.uid}/history`),
-        orderBy("completed", "desc")
+        orderBy("time.unix.endTime", "desc")
       )
     ).then((docs) => {
       const data: ChallengeSummary[] = [];
@@ -108,10 +108,13 @@ export const UserHistory = () => {
       <Title>History</Title>
       {history &&
         history.map((summary) => (
-          <HistoryEntry key={summary.completed}>
+          <HistoryEntry key={summary.time.unix.endTime}>
             <HistoryEntryLeft>
               <Data
-                label={format(summary.completed, "MMM d, yyyy hh:mm:ss a")}
+                label={format(
+                  summary.time.unix.endTime,
+                  "MMM d, yyyy hh:mm:ss a"
+                )}
                 value={`${summary.wpm} WPM`}
               />
             </HistoryEntryLeft>
@@ -126,7 +129,12 @@ export const UserHistory = () => {
                 ).toFixed(2)}%`}
               />
               <Data label="Mistakes" value={summary.telemetry.numErrors} />
-              <Data label="Challenge Duration" value={`${summary.duration}s`} />
+              <Data
+                label="Challenge Duration"
+                value={`${summary.challengeDuration}${
+                  summary.mode === "default" ? "s" : "ms"
+                }`}
+              />
             </HistoryEntryRight>
           </HistoryEntry>
         ))}
