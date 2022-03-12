@@ -341,6 +341,7 @@ const reducer = (
       return {
         ...state,
         active: false,
+        userInput: "",
         time: {
           unix: {
             startTime: state.time.unix.startTime,
@@ -528,15 +529,17 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
   const [resetSpinCounter, setResetSpinCounter] = useState(0);
 
   const handleReset = useCallback(() => {
+    // do not allow resetting on daily challenge
+    if (state.mode === "daily") return;
     dispatch({ type: TEXT_PROMPT_ACTIONS.RESET });
     setWordRef(null);
     setCharRef(null);
     setNextWordRef(null);
-    setChallengeTimer(mode === "daily" ? -1 : INITIAL_STATE.challengeDuration);
+    setChallengeTimer(INITIAL_STATE.challengeDuration);
     setCoverTimer(4);
     setResetSpinCounter((prev) => prev + 1);
     setTimeout(() => inputRef?.current?.focus(), 100);
-  }, [mode]);
+  }, [state.mode]);
 
   useEffect(() => {
     const handleGlobalReset = (e: KeyboardEvent) => {
@@ -657,26 +660,52 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
   ]);
 
   // Upload challenge summary at end of challenge
+  // If the user is logged in, only upload if this is their first attempt
   useEffect(() => {
-    if (state.time.unix.endTime === 0 || !firebaseUser) return;
+    const handleUpload = async () => {
+      if (state.time.unix.endTime === 0 || !firebaseUser) return;
 
-    const docId = format(Date.now(), "MM-dd-yyyy_hh:mm:ss_a");
-    const docPayload: ChallengeSummary = {
-      mode: state.mode,
-      wpm: state.wpm,
-      challengeDuration:
-        state.mode === "default"
-          ? state.challengeDuration
-          : state.time.performance.endTime - state.time.performance.startTime,
-      telemetry: state.telemetry,
-      time: state.time,
+      const docId =
+        state.mode === "daily"
+          ? format(Date.now(), "MM-dd-yyyy")
+          : format(Date.now(), "MM-dd-yyyy_hh:mm:ss_a");
+      if (state.mode === "daily") {
+        try {
+          const res = await getDoc(
+            doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`)
+          );
+          if (res.exists()) {
+            alert(
+              "Nice job! Unfortunately, we only save the first attempt of the daily challenge. However, you can still keep practicing with it!"
+            );
+            return;
+          }
+        } catch (error) {
+          alert(error);
+        }
+      }
+
+      const docPayload: ChallengeSummary = {
+        mode: state.mode,
+        wpm: state.wpm,
+        challengeDuration:
+          state.mode === "default"
+            ? state.challengeDuration
+            : state.time.performance.endTime - state.time.performance.startTime,
+        telemetry: state.telemetry,
+        time: state.time,
+      };
+      try {
+        await setDoc(
+          doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`),
+          docPayload
+        );
+      } catch (error) {
+        alert(error);
+      }
     };
-    setDoc(
-      doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`),
-      docPayload
-    ).catch((error) => {
-      alert(error);
-    });
+
+    handleUpload();
   }, [
     challengeTimer,
     firebaseUser,
@@ -898,6 +927,8 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
                 ? ""
                 : coverTimer > 3
                 ? "Press SPACE to start"
+                : state.mode == "daily"
+                ? "Daily challenge complete!"
                 : "Press CTRL + SPACE to restart"
             }
             disabled={challengeTimer === 0}
@@ -916,14 +947,23 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
                 Press <KeyCap value="Space" /> to start
               </>
             ) : (
-              <>
-                Press <KeyCap value="Ctrl" /> + <KeyCap value="Space" /> to
-                restart
-              </>
+              state.mode !== "daily" && (
+                <>
+                  Press <KeyCap value="Ctrl" /> + <KeyCap value="Space" /> to
+                  restart
+                </>
+              )
             )}
           </InputInstruction>
         </InputWrapper>
-        <IconWrapper onClick={handleReset}>
+        <IconWrapper
+          onClick={handleReset}
+          style={
+            state.mode === "daily"
+              ? { cursor: "not-allowed", opacity: 0.5 }
+              : {}
+          }
+        >
           <ResetIcon
             style={{
               height: "2rem",
