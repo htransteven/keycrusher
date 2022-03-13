@@ -1,6 +1,6 @@
 export const COLOR_PALLETE = {
   lightGrey: "#2f3943",
-  lighterGrey: "#878787",
+  lighterGrey: "#c4c4c4",
   midGrey: "#28303a",
   darkGrey: "#222831",
   grey: "#393E46",
@@ -20,7 +20,11 @@ export const COLOR_PALLETE = {
 export const DARK_THEME = {
   htmlBackgroundColor: COLOR_PALLETE.darkGrey,
   primaryTextColor: COLOR_PALLETE.white,
-  secondaryText: COLOR_PALLETE.lighterGrey,
+  secondaryTextColor: COLOR_PALLETE.offwhite,
+  tertiaryTextColor: COLOR_PALLETE.lighterGrey,
+  greenAccent: COLOR_PALLETE.correct,
+  blueAccent: COLOR_PALLETE.baseBlue,
+  redAccent: COLOR_PALLETE.error,
   navbar: {
     primaryTextColor: COLOR_PALLETE.white,
     accentColor: COLOR_PALLETE.correct,

@@ -3,18 +3,15 @@ import { BREAKPOINTS } from "../styles/breakpoints";
 import { Navbar } from "./Navbar";
 
 const Wrapper = styled.div`
-  padding-left: 15vw;
-  padding-right: 15vw;
-  padding-top: 30px;
+  padding: 30px 15vw;
+  min-height: 100vh;
 
   @media only screen and (max-width: ${BREAKPOINTS.tabletLarge}) {
-    padding-left: 10vw;
-    padding-right: 10vw;
+    padding: 30px 10vw;
   }
 
   @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 30px 10px;
   }
 `;
 

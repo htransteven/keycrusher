@@ -3,6 +3,7 @@ import styled from "styled-components";
 import ProfileIcon from "../assets/user-solid.svg";
 import SettingsIcon from "../assets/gear-solid.svg";
 import LeaderBoardIcon from "../assets/list-ol-solid.svg";
+import AboutIcon from "../assets/question-solid.svg";
 import { useRouter } from "next/router";
 
 const NavbarContainer = styled.div`
@@ -10,7 +11,7 @@ const NavbarContainer = styled.div`
   flex-flow: row wrap;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const NavbarOptionsContainer = styled.div`
@@ -29,6 +30,7 @@ const NavbarTextOptionWrapper = styled.a<{ active?: boolean }>`
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  background-color: ${({ theme }) => theme.navbar.backgroundColor};
 
   transition: 0.3s all;
   border: 1px solid
@@ -36,7 +38,6 @@ const NavbarTextOptionWrapper = styled.a<{ active?: boolean }>`
       active ? theme.navbar.accentColor : "transparent"};
   color: ${({ theme, active }) =>
     active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
-  background-color: ${({ theme }) => theme.navbar.backgroundColor};
 `;
 
 const NavbarTextOption = styled.span`
@@ -54,13 +55,14 @@ const NavbarIconWrapper = styled.a<{ active?: boolean }>`
   border-radius: 3px;
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  background-color: ${({ theme }) => theme.navbar.backgroundColor};
+
+  transition: 0.3s all;
   border: 1px solid
     ${({ theme, active }) =>
       active ? theme.navbar.accentColor : "transparent"};
   color: ${({ theme, active }) =>
     active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
-  color: ${({ theme }) => theme.navbar.primaryTextColor};
-  background-color: ${({ theme }) => theme.navbar.backgroundColor};
 `;
 
 const AlphaIndicator = styled.span`
@@ -146,6 +148,16 @@ export const Navbar = () => {
             }}
           />
         </NavbarIconWrapper>
+        <Link href={"/about"} passHref>
+          <NavbarIconWrapper active={router.asPath.includes("/about")}>
+            <AboutIcon
+              style={{
+                height: "1.5rem",
+                width: "1.5rem",
+              }}
+            />
+          </NavbarIconWrapper>
+        </Link>
       </NavbarOptionsContainer>
     </NavbarContainer>
   );

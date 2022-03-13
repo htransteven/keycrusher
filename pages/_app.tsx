@@ -37,9 +37,6 @@ const GlobalStyle = createGlobalStyle`
       font-size: 16px;
     }
   }
-  a {
-    text-decoration: none;
-  }
 
   input, button {
     border: none;
@@ -49,9 +46,30 @@ const GlobalStyle = createGlobalStyle`
     font-size: 1rem;
   }
 
-  p {
+  h2 {
+    font-weight: 500;
+    color: ${({ theme }) => theme.primaryTextColor};
+  }
+  h3 {
+    font-weight: 500;
+    color: ${({ theme }) => theme.secondaryTextColor};
+  }
+
+  p, a {
     margin: 0;
     font-size: 0.9rem;
+  }
+  p {
+    color: ${({ theme }) => theme.tertiaryTextColor};
+  }
+  a {
+    text-decoration: none;
+    color: ${({ theme }) => theme.greenAccent};
+  }
+
+  li {
+    font-size: 0.8rem;
+    color: ${({ theme }) => theme.tertiaryTextColor};
   }
 `;
 
