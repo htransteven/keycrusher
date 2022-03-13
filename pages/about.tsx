@@ -50,6 +50,13 @@ const AboutPage = () => {
           <Paragraph>synonym for typing test, assessment, etc.</Paragraph>
         </ListItem>
         <ListItem>
+          <TerminologyKey>Daily Challenge</TerminologyKey>
+          <Paragraph>
+            The daily challenge is a new and random challenge generated everyday
+            at 12:00am PST. The same set of words are given to everyone.
+          </Paragraph>
+        </ListItem>
+        <ListItem>
           <TerminologyKey>Words-per-Minute (WPM)</TerminologyKey>
           <Paragraph>the rate at which a user can type</Paragraph>
           <Paragraph>

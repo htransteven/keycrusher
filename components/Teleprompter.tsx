@@ -911,13 +911,14 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
             ) : null
           )}
         </TeleprompterBox>
-        {coverTimer > 0 && (
+        {state.mode !== "daily" && coverTimer > 0 && (
           <TeleprompterCover>
-            {coverTimer > 3
-              ? state.mode === "daily"
-                ? "Daily Challenge"
-                : "Are you ready?"
-              : coverTimer}
+            {coverTimer > 3 ? "Ready for the challenge?" : coverTimer}
+          </TeleprompterCover>
+        )}
+        {state.mode === "daily" && coverTimer > 0 && (
+          <TeleprompterCover>
+            {coverTimer > 3 ? "Ready for the daily challenge?" : coverTimer}
           </TeleprompterCover>
         )}
       </TeleprompterWrapper>

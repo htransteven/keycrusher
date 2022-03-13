@@ -117,7 +117,7 @@ export const Navbar = () => {
         <AppTitle />
       </NavbarOptionsContainer>
       <NavbarOptionsContainer>
-        <Link href={"/daily"} passHref>
+        <Link href={router.asPath.includes("/daily") ? "/" : "/daily"} passHref>
           <NavbarTextOptionWrapper active={router.asPath.includes("/daily")}>
             <NavbarTextOption>Daily Challenge</NavbarTextOption>
           </NavbarTextOptionWrapper>
