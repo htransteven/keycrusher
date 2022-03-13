@@ -640,7 +640,6 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
           }
 
           const dailyChallange = doc.data() as DailyChallenge;
-          console.log(dailyChallange.text);
 
           dispatch({
             type: TEXT_PROMPT_ACTIONS.ADD_WORDS,
