@@ -17,7 +17,7 @@ const datefns = require("date-fns");
 admin.initializeApp();
 
 export const scheduledFunctionCrontab = functions.pubsub
-  .schedule("0 12 * * *")
+  .schedule("0 0 * * *")
   .timeZone("America/Los_Angeles") // Users can choose timezone - default is America/Los_Angeles
   .onRun(async () => {
     // Download file from bucket.

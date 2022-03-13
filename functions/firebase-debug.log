@@ -1,0 +1,31 @@
+[debug] [2022-03-13T08:07:58.622Z] ----------------------------------------------------------------------
+[debug] [2022-03-13T08:07:58.623Z] Command:       /Users/htransteven/.nvm/versions/node/v16.14.0/bin/node /Users/htransteven/.nvm/versions/node/v16.14.0/bin/firebase deploy --only functions
+[debug] [2022-03-13T08:07:58.623Z] CLI Version:   10.2.2
+[debug] [2022-03-13T08:07:58.623Z] Platform:      darwin
+[debug] [2022-03-13T08:07:58.623Z] Node Version:  v16.14.0
+[debug] [2022-03-13T08:07:58.625Z] Time:          Sun Mar 13 2022 00:07:58 GMT-0800 (Pacific Standard Time)
+[debug] [2022-03-13T08:07:58.625Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2022-03-13T08:07:58.626Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2022-03-13T08:07:58.661Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2022-03-13T08:07:58.661Z] > authorizing via signed-in user (htransteven@gmail.com)
+[debug] [2022-03-13T08:07:58.661Z] [iam] checking project key-crusher for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2022-03-13T08:07:58.661Z] > refreshing access token with scopes: []
+[debug] [2022-03-13T08:07:58.662Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2022-03-13T08:07:58.857Z] <<< HTTP RESPONSE 200 {"pragma":"no-cache","date":"Sun, 13 Mar 2022 08:07:58 GMT","expires":"Mon, 01 Jan 1990 00:00:00 GMT","cache-control":"no-cache, no-store, max-age=0, must-revalidate","content-type":"application/json; charset=utf-8","vary":"X-Origin, Referer, Origin,Accept-Encoding","server":"scaffolding on HTTPServer2","x-xss-protection":"0","x-frame-options":"SAMEORIGIN","x-content-type-options":"nosniff","alt-svc":"h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"","accept-ranges":"none","transfer-encoding":"chunked"}
+[debug] [2022-03-13T08:07:58.904Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/key-crusher:testIamPermissions [none]
+[debug] [2022-03-13T08:07:58.904Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/key-crusher:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2022-03-13T08:07:58.993Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2022-03-13T08:07:58.993Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2022-03-13T08:07:59.174Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/key-crusher:testIamPermissions 200
+[debug] [2022-03-13T08:07:59.175Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/key-crusher:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2022-03-13T08:07:59.175Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/key-crusher/serviceAccounts/key-crusher@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2022-03-13T08:07:59.175Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/key-crusher/serviceAccounts/key-crusher@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2022-03-13T08:07:59.539Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/key-crusher/serviceAccounts/key-crusher@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2022-03-13T08:07:59.539Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/key-crusher/serviceAccounts/key-crusher@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'key-crusher'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
