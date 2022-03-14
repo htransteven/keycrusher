@@ -2,7 +2,7 @@
 
 🔥 Challenge yourself and become the next best keyboard warrior!
 
-Keycrusher is deployed at keycrusher.com! 🚀
+Live at [keycrusher.com](https://keycrusher.com)! 🚀
 
 ## Technology
 
@@ -16,5 +16,5 @@ Keycrusher is deployed at keycrusher.com! 🚀
 
 ## Contact
 
-👨‍💻 Steven Huynh-Trna
+👨‍💻 Steven Huynh-Tran
 ✉️ hello@keycrusher.com
