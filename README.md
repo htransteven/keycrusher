@@ -17,4 +17,4 @@ Live at [keycrusher.com](https://keycrusher.com)! 🚀
 ## Contact
 
 👨‍💻 Steven Huynh-Tran
-✉️ hello@keycrusher.com
+</br>📧 hello@keycrusher.com
