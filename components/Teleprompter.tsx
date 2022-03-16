@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import React, {
   ChangeEventHandler,
@@ -18,11 +16,9 @@ import {
   ChallengeSummary,
   ChallengeTimeData,
 } from "../models/ChallengeSummary";
-import { DailyChallenge } from "../models/DailyChallenge";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { KeyCap } from "./Keycap";
-import { PostChallengeStats } from "./PostChallengeStats";
 
 const WORD_GAP = "0.35rem";
 const FONT_SIZE = "1.5rem";
@@ -184,9 +180,9 @@ interface CursorPosition {
 
 export interface TeleprompterState {
   mode: ChallengeMode;
+  challengeDuration: number; // seconds
   active: boolean;
   wpm: number;
-  challengeDuration: number; // seconds
   time: ChallengeTimeData;
   teleprompter: {
     fetchWords: number;
@@ -339,7 +335,8 @@ const reducer = (
       };
     case TEXT_PROMPT_ACTIONS.RESET:
       return { ...INITIAL_STATE, mode: state.mode };
-    case TEXT_PROMPT_ACTIONS.END:
+    case TEXT_PROMPT_ACTIONS.END: {
+      const performanceNow = window.performance.now();
       return {
         ...state,
         active: false,
@@ -351,10 +348,15 @@ const reducer = (
           },
           performance: {
             startTime: state.time.performance.startTime,
-            endTime: window.performance.now(),
+            endTime: performanceNow,
           },
         },
+        challengeDuration:
+          state.mode === "daily"
+            ? performanceNow - state.time.performance.startTime
+            : state.challengeDuration,
       };
+    }
     case TEXT_PROMPT_ACTIONS.UPDATE_WPM:
       return {
         ...state,
@@ -510,17 +512,28 @@ const reducer = (
   }
 };
 
-interface Teleprompter {
-  mode?: ChallengeMode;
+interface Teleprompter
+  extends Partial<Pick<TeleprompterState, "mode" | "challengeDuration">> {
+  onMoreWords: (wordCount: number) => Promise<string[] | null>;
+  onComplete: (state: ChallengeSummary) => void;
+  onReset: () => void;
+  coverText?: string;
 }
 
-export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
+export const Teleprompter: React.FC<Teleprompter> = ({
+  mode = "default",
+  challengeDuration = 30,
+  coverText = "Ready for the challenge?",
+  onMoreWords,
+  onComplete,
+  onReset,
+}) => {
   const theme = useTheme();
-  const { firestore, firebaseUser } = useFirebase();
+  const { firebaseUser } = useFirebase();
   const [state, dispatch] = useReducer(reducer, {
     ...INITIAL_STATE,
     mode,
-    challengeDuration: mode === "daily" ? -1 : INITIAL_STATE.challengeDuration,
+    challengeDuration: mode === "daily" ? -1 : challengeDuration,
   });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
@@ -541,7 +554,8 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
     setCoverTimer(4);
     setResetSpinCounter((prev) => prev + 1);
     setTimeout(() => inputRef?.current?.focus(), 100);
-  }, [state.mode]);
+    onReset();
+  }, [onReset, state.mode]);
 
   useEffect(() => {
     const handleGlobalReset = (e: KeyboardEvent) => {
@@ -580,6 +594,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
   }, [state.active, coverTimer]);
 
   // Challenge interval timer, update WPM
+  // Even if mode is set to "daily", the interval timer is still used to update WPM
   useEffect(() => {
     if (!state.active) return;
     const timerTick = setInterval(() => {
@@ -600,122 +615,58 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
     };
   }, [challengeTimer, state.active, state.mode]);
 
-  // Fetch default challenge words
+  // Fetch words
   useEffect(() => {
-    if (state.mode !== "default") return;
-    if (state.teleprompter.fetchWords === 0) return;
+    if (state.mode === "default" && state.teleprompter.fetchWords === 0) {
+      return;
+    }
+    if (
+      state.mode === "daily" &&
+      Object.keys(state.telemetry.history).length > 0
+    ) {
+      return;
+    }
 
-    const getMoreWords = async () => {
-      const res = await fetch(
-        `/api/words?count=${state.teleprompter.fetchWords}`
-      );
-
-      if (!res.ok) {
-        console.log("failed to get more words");
+    const loadWords = async () => {
+      const newWords = await onMoreWords(state.teleprompter.fetchWords);
+      if (!newWords) {
         return;
       }
 
       dispatch({
         type: TEXT_PROMPT_ACTIONS.ADD_WORDS,
         payload: {
-          words: (await res.json()) as string[],
+          words: newWords,
         },
       });
     };
 
-    getMoreWords();
-  }, [state.mode, state.teleprompter.fetchWords]);
-
-  // Fetch daily challenge words
-  useEffect(() => {
-    if (state.mode !== "daily") return;
-    if (Object.keys(state.telemetry.history).length > 0) return;
-
-    const loadDailyChallenge = async () => {
-      getDoc(doc(firestore, "daily", format(Date.now(), "MM-dd-yyyy"))).then(
-        (doc) => {
-          if (!doc.exists()) {
-            alert("failed to retrieve daily challenge");
-            return;
-          }
-
-          const dailyChallange = doc.data() as DailyChallenge;
-
-          dispatch({
-            type: TEXT_PROMPT_ACTIONS.ADD_WORDS,
-            payload: {
-              words: dailyChallange.text.split(" "),
-            },
-          });
-        }
-      );
-    };
-
-    loadDailyChallenge();
+    loadWords();
   }, [
-    firestore,
-    state.active,
+    onMoreWords,
     state.mode,
     state.telemetry.history,
     state.teleprompter.fetchWords,
   ]);
 
-  // Upload challenge summary at end of challenge
-  // If the user is logged in, only upload if this is their first attempt
+  // use onComplete
   useEffect(() => {
-    const handleUpload = async () => {
-      if (state.time.unix.endTime === 0 || !firebaseUser) return;
-
-      const docId =
-        state.mode === "daily"
-          ? format(Date.now(), "MM-dd-yyyy")
-          : format(Date.now(), "MM-dd-yyyy_hh:mm:ss_a");
-      if (state.mode === "daily") {
-        try {
-          const res = await getDoc(
-            doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`)
-          );
-          if (res.exists()) {
-            alert(
-              "Nice job! Unfortunately, we only save the first attempt of the daily challenge. However, you can still keep practicing with it!"
-            );
-            return;
-          }
-        } catch (error) {
-          alert(error);
-        }
-      }
-
-      const docPayload: ChallengeSummary = {
+    if (state.time.performance.endTime !== 0) {
+      onComplete({
         mode: state.mode,
-        wpm: state.wpm,
-        challengeDuration:
-          state.mode === "default"
-            ? state.challengeDuration
-            : state.time.performance.endTime - state.time.performance.startTime,
+        challengeDuration: state.challengeDuration,
         telemetry: state.telemetry,
         time: state.time,
-      };
-      try {
-        await setDoc(
-          doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`),
-          docPayload
-        );
-      } catch (error) {
-        alert(error);
-      }
-    };
-
-    handleUpload();
+        wpm: state.wpm,
+      });
+    }
   }, [
-    challengeTimer,
-    firebaseUser,
-    firestore,
-    state.active,
+    onComplete,
     state.challengeDuration,
     state.mode,
     state.telemetry,
     state.time,
+    state.time.performance.endTime,
     state.wpm,
   ]);
 
@@ -910,14 +861,9 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
             ) : null
           )}
         </TeleprompterBox>
-        {state.mode !== "daily" && coverTimer > 0 && (
+        {coverTimer > 0 && (
           <TeleprompterCover>
-            {coverTimer > 3 ? "Ready for the challenge?" : coverTimer}
-          </TeleprompterCover>
-        )}
-        {state.mode === "daily" && coverTimer > 0 && (
-          <TeleprompterCover>
-            {coverTimer > 3 ? "Ready for the daily challenge?" : coverTimer}
+            {coverTimer > 3 ? coverText : `Start in ${coverTimer}...`}
           </TeleprompterCover>
         )}
       </TeleprompterWrapper>
@@ -964,11 +910,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
         </InputWrapper>
         <IconWrapper
           onClick={handleReset}
-          style={
-            state.mode === "daily"
-              ? { cursor: "not-allowed", opacity: 0.5 }
-              : {}
-          }
+          style={state.mode === "daily" ? { opacity: 0.5 } : {}}
         >
           <ResetIcon
             style={{
@@ -1010,15 +952,6 @@ export const Teleprompter: React.FC<Teleprompter> = ({ mode = "default" }) => {
           </Link>
         )}
       </TelepromptStatus>
-      {state.time.unix.endTime !== 0 && (
-        <PostChallengeStats
-          mode={state.mode}
-          telemetry={state.telemetry}
-          wpm={state.wpm}
-          challengeDuration={state.challengeDuration}
-          time={state.time}
-        />
-      )}
     </Container>
   );
 };
