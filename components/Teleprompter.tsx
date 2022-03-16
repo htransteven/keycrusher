@@ -581,7 +581,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     return () => {
       window.removeEventListener("keydown", handleGlobalReset);
     };
-  }, [coverTimer, handleReset]);
+  }, [coverTimer, handleReset, state.time.unix.endTime]);
 
   // Teleprompt cover interval timer
   useEffect(() => {

@@ -134,8 +134,9 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
 }) => {
   const theme = useTheme();
   const averageAccuracy =
-    history.accuracy.reduce((prev, curr) => prev + curr, 0) /
-    history.accuracy.length;
+    (history.accuracy.reduce((prev, curr) => prev + curr, 0) /
+      history.accuracy.length) *
+    100;
 
   const averageWPM =
     history.wpm.reduce((prev, curr) => prev + curr, 0) / history.wpm.length;
@@ -150,11 +151,11 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
     <Container>
       <DailyChallengeSummaryContainer>
         <Data label="Streak" value={streak} />
-        <Data label="Average WPM" value={`${averageWPM.toFixed(0)} wpm`} />
-        <Data label="Average RTT" value={`${averageRTT.toFixed(0)} ms`} />
+        <Data label="Average WPM" value={`${averageWPM.toFixed(2)} wpm`} />
+        <Data label="Average RTT" value={`${averageRTT.toFixed(2)} ms`} />
         <Data
           label="Average Accuracy"
-          value={`${(averageAccuracy * 100).toFixed(2)}%`}
+          value={`${averageAccuracy.toFixed(2)}%`}
         />
         <Data
           label="Average Challenge Duration"
@@ -197,7 +198,7 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                   y={averageWPM}
                   label={
                     <Label
-                      value={`Average WPM = ${averageWPM} wpm`}
+                      value={`Average WPM = ${averageWPM.toFixed(2)} wpm`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}
@@ -219,7 +220,7 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={history.rtt.map((rtt, index) => ({
-                  rtt,
+                  rtt: Math.round((rtt + Number.EPSILON) * 100) / 100,
                   day: formatInTimeZone(
                     utcToZonedTime(
                       history.endTimes[index],
@@ -239,14 +240,18 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                   unit={"ms"}
                 />
                 <XAxis dataKey="day" stroke={theme.graphs.axis.color} />
-                <YAxis dataKey="rtt" stroke={theme.graphs.axis.color} />
+                <YAxis
+                  dataKey="rtt"
+                  stroke={theme.graphs.axis.color}
+                  unit={"ms"}
+                />
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
                   y={averageRTT}
                   label={
                     <Label
-                      value={`Average RTT = ${averageRTT} ms`}
+                      value={`Average RTT = ${averageRTT.toFixed(2)} ms`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}
@@ -268,7 +273,8 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={history.accuracy.map((accuracy, index) => ({
-                  accuracy,
+                  accuracy:
+                    Math.round((accuracy * 100 + Number.EPSILON) * 100) / 100,
                   day: formatInTimeZone(
                     utcToZonedTime(
                       history.endTimes[index],
@@ -288,14 +294,20 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                   unit={"%"}
                 />
                 <XAxis dataKey="day" stroke={theme.graphs.axis.color} />
-                <YAxis dataKey="accuracy" stroke={theme.graphs.axis.color} />
+                <YAxis
+                  dataKey="accuracy"
+                  stroke={theme.graphs.axis.color}
+                  unit={"%"}
+                />
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
                   y={averageAccuracy}
                   label={
                     <Label
-                      value={`Average Accuracy = ${averageAccuracy}%`}
+                      value={`Average Accuracy = ${averageAccuracy.toFixed(
+                        2
+                      )}%`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}
@@ -318,7 +330,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
               <LineChart
                 data={history.challengeDuration.map(
                   (challengeDuration, index) => ({
-                    challengeDuration: challengeDuration.toFixed(2),
+                    challengeDuration:
+                      Math.round(
+                        (challengeDuration / 1000 + Number.EPSILON) * 1000
+                      ) / 1000,
                     day: formatInTimeZone(
                       utcToZonedTime(
                         history.endTimes[index],
@@ -342,16 +357,24 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                 <YAxis
                   dataKey="challengeDuration"
                   stroke={theme.graphs.axis.color}
+                  unit={"s"}
                 />
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
-                  y={averageChallengeDuration.toFixed(2)}
+                  y={
+                    Math.round(
+                      (averageChallengeDuration / 1000 + Number.EPSILON) * 1000
+                    ) / 1000
+                  }
                   label={
                     <Label
-                      value={`Average Challenge Duration = ${averageChallengeDuration.toFixed(
-                        2
-                      )} ms`}
+                      value={`Average Challenge Duration = ${
+                        Math.round(
+                          (averageChallengeDuration / 1000 + Number.EPSILON) *
+                            1000
+                        ) / 1000
+                      } s`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}

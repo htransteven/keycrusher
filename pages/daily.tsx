@@ -71,7 +71,7 @@ const HomePage: NextPage = () => {
 
       if (!dailyStats.summary) return;
 
-      // old locally stored summary
+      // if old locally stored summary, do not show or upload
       if (
         formatInTimeZone(
           utcToZonedTime(
@@ -82,12 +82,11 @@ const HomePage: NextPage = () => {
           "MM-dd-yyyy"
         ) !== docId
       ) {
-        localStorage.removeItem(LOCALSTORAGE_DAILY_STATS_KEY);
         setLoading(false);
         return;
       }
 
-      // upload daily challenge to user's profile
+      // upload today's unsaved daily challenge to user's profile if needed
       if (firebaseUser) {
         try {
           await setDoc(
