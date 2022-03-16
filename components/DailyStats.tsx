@@ -19,7 +19,11 @@ const Container = styled.div`
   display: flex;
   flex-flow: column nowrap;
   gap: 10px;
-  margin: 10px 0;
+  margin: 25px 0;
+`;
+
+const Title = styled.h3`
+  margin: 0;
 `;
 
 const DailyChallengeSummaryContainer = styled.div`
@@ -149,8 +153,9 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
 
   return (
     <Container>
+      <Title>Daily Challenge Stats</Title>
       <DailyChallengeSummaryContainer>
-        <Data label="Streak" value={streak} />
+        <Data label={"Streak 🔥"} value={streak} />
         <Data label="Average WPM" value={`${averageWPM.toFixed(2)} wpm`} />
         <Data label="Average RTT" value={`${averageRTT.toFixed(2)} ms`} />
         <Data

@@ -24,7 +24,10 @@ const Container = styled.div`
   display: flex;
   flex-flow: column nowrap;
   gap: 10px;
-  margin: 10px 0;
+  margin: 25px 0;
+`;
+const Title = styled.h3`
+  margin: 0;
 `;
 
 const GraphInfo = styled.div`
@@ -193,6 +196,7 @@ export const PostChallengeStats: React.FC<ChallengeSummaryProps> = ({
 
   return (
     <Container>
+      <Title>Post Challenge Summary</Title>
       <ChallengeSummary telemetry={telemetry} {...summaryProps} />
       <GraphContainer>
         <GraphInfo>
