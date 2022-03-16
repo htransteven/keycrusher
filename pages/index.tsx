@@ -34,9 +34,9 @@ const HomePage: NextPage = () => {
     async (summary: ChallengeSummary) => {
       setChallengeSummary(summary);
 
-      if (summary.time.unix.endTime === 0 || !firebaseUser) return;
+      if (!firebaseUser) return;
 
-      const docId = format(Date.now(), "MM-dd-yyyy_hh:mm:ss_a");
+      const docId = format(Date.now(), "MM-dd-yyyy_hh:mm:ss:SSS_a");
 
       try {
         await setDoc(

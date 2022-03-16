@@ -512,8 +512,7 @@ const reducer = (
   }
 };
 
-interface Teleprompter
-  extends Partial<Pick<TeleprompterState, "mode" | "challengeDuration">> {
+interface Teleprompter extends Partial<TeleprompterState> {
   onMoreWords: (wordCount: number) => Promise<string[] | null>;
   onComplete: (state: ChallengeSummary) => void;
   onReset: () => void;
@@ -527,6 +526,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
   onMoreWords,
   onComplete,
   onReset,
+  ...stateOverride
 }) => {
   const theme = useTheme();
   const { firebaseUser } = useFirebase();
@@ -534,6 +534,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     ...INITIAL_STATE,
     mode,
     challengeDuration: mode === "daily" ? -1 : challengeDuration,
+    ...stateOverride,
   });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
@@ -559,11 +560,15 @@ export const Teleprompter: React.FC<Teleprompter> = ({
 
   useEffect(() => {
     const handleGlobalReset = (e: KeyboardEvent) => {
-      if (!e.ctrlKey) return;
-
       switch (e.key) {
         case " ": {
-          handleReset();
+          if (e.ctrlKey) {
+            handleReset();
+          } else {
+            if (coverTimer !== 4) return;
+            setCoverTimer(3);
+            setTimeout(() => inputRef?.current?.focus(), 100);
+          }
         }
         default: {
           return;
@@ -576,7 +581,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     return () => {
       window.removeEventListener("keydown", handleGlobalReset);
     };
-  }, [handleReset]);
+  }, [coverTimer, handleReset]);
 
   // Teleprompt cover interval timer
   useEffect(() => {
@@ -835,6 +840,25 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     ]
   );
 
+  const getPlaceHolderText = () => {
+    if (state.active) {
+      return "";
+    } else {
+      if (state.mode === "default") {
+        if (state.time.unix.endTime !== 0) {
+          return "Press CTRL + SPACE to restart";
+        } else {
+          return "Press SPACE to start";
+        }
+      } else {
+        if (state.time.unix.endTime === 0) {
+          return "Press SPACE to start";
+        }
+      }
+      return "";
+    }
+  };
+
   return (
     <Container>
       <TeleprompterWrapper>
@@ -874,16 +898,8 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             onKeyUp={handleKeyUp}
             onChange={handleChange}
             value={state.userInput}
-            placeholder={
-              state.active
-                ? ""
-                : coverTimer > 3
-                ? "Press SPACE to start"
-                : state.mode == "daily"
-                ? ""
-                : "Press CTRL + SPACE to restart"
-            }
-            disabled={challengeTimer === 0}
+            placeholder={getPlaceHolderText()}
+            disabled={state.time.unix.endTime !== 0}
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
@@ -891,10 +907,10 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           />
           <InputInstruction
             style={{
-              display: !state.active ? "" : "none",
+              display: state.active ? "none" : "",
             }}
           >
-            {coverTimer > 3 ? (
+            {state.time.unix.endTime === 0 && coverTimer > 3 ? (
               <>
                 Press <KeyCap value="Space" /> to start
               </>
