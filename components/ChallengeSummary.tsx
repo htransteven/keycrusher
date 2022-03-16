@@ -60,7 +60,7 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
   const { numCorrect, numErrors } = telemetry;
   return (
     <Container>
-      <Data label="WPM" value={`${wpm.toFixed(0)}`} />
+      <Data label="WPM" value={`${wpm.toFixed(0)} wpm`} />
       <Data
         label="Accuracy"
         value={`${((numCorrect / (numCorrect + numErrors)) * 100).toFixed(2)}%`}
@@ -73,7 +73,7 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
             ? `${challengeDuration}s`
             : `${(
                 time.performance.endTime - time.performance.startTime
-              ).toFixed(2)}ms`
+              ).toFixed(2)} ms`
         }
       />
     </Container>
