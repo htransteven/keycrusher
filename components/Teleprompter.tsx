@@ -565,7 +565,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           if (e.ctrlKey) {
             handleReset();
           } else {
-            if (coverTimer !== 4) return;
+            if (state.time.unix.endTime !== 0 || coverTimer !== 4) return;
             setCoverTimer(3);
             setTimeout(() => inputRef?.current?.focus(), 100);
           }
