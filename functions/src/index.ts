@@ -4,7 +4,7 @@ const admin = require("firebase-admin");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
-const datefns = require("date-fns");
+const datefnsTz = require("date-fns-tz");
 
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
@@ -17,7 +17,7 @@ const datefns = require("date-fns");
 admin.initializeApp();
 
 export const scheduledFunctionCrontab = functions.pubsub
-  .schedule("0 0 * * *")
+  .schedule("50 23 * * *")
   .timeZone("America/Los_Angeles") // Users can choose timezone - default is America/Los_Angeles
   .onRun(async () => {
     // Download file from bucket.
@@ -29,7 +29,7 @@ export const scheduledFunctionCrontab = functions.pubsub
     fs.readFile(tempFilePath, (err: unknown, data: unknown) => {
       if (err) throw err;
       const words = JSON.parse(data as string) as string[];
-      const wordCount = 10;
+      const wordCount = 25;
       const wordMap: { [wordIndex: string | number]: string } = {};
       const result = [];
       for (let i = 0; i < wordCount; i++) {
@@ -60,7 +60,13 @@ export const scheduledFunctionCrontab = functions.pubsub
       admin
         .firestore()
         .collection("daily")
-        .doc(datefns.format(Date.now(), "MM-dd-yyyy"))
+        .doc(
+          datefnsTz.formatInTimeZone(
+            datefnsTz.utcToZonedTime(Date.now(), "America/Los_Angeles"),
+            "America/Los_Angeles",
+            "MM-dd-yyyy"
+          )
+        )
         .create(newDailyChallenge);
     });
 

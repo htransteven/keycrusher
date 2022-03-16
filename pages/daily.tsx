@@ -120,7 +120,15 @@ const HomePage: NextPage = () => {
   const getDailyChallengeWords = useCallback(async () => {
     try {
       const dailyChallengeDoc = await getDoc(
-        doc(firestore, "daily", format(Date.now(), "MM-dd-yyyy"))
+        doc(
+          firestore,
+          "daily",
+          formatInTimeZone(
+            utcToZonedTime(Date.now(), "America/Los_Angeles"),
+            "America/Los_Angeles",
+            "MM-dd-yyyy"
+          )
+        )
       );
 
       if (!dailyChallengeDoc.exists()) {
@@ -146,7 +154,11 @@ const HomePage: NextPage = () => {
     async (summary: ChallengeSummary) => {
       if (challengeSummary) return;
       setChallengeSummary(summary);
-      const docId = format(summary.time.unix.endTime, "MM-dd-yyyy");
+      const docId = formatInTimeZone(
+        utcToZonedTime(summary.time.unix.endTime, "America/Los_Angeles"),
+        "America/Los_Angeles",
+        "MM-dd-yyyy"
+      );
 
       const temp = localStorage.getItem("LOCALSTORAGE_DAILY_STATS_KEY");
 

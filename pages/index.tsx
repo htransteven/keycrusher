@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
 import { doc, setDoc } from "firebase/firestore";
 import type { NextPage } from "next";
 import Head from "next/head";
@@ -35,8 +35,11 @@ const HomePage: NextPage = () => {
       setChallengeSummary(summary);
 
       if (!firebaseUser) return;
-
-      const docId = format(Date.now(), "MM-dd-yyyy_hh:mm:ss:SSS_a");
+      const docId = formatInTimeZone(
+        utcToZonedTime(Date.now(), "America/Los_Angeles"),
+        "America/Los_Angeles",
+        "MM-dd-yyyy_hh:mm:ss:SSS_a"
+      );
 
       try {
         await setDoc(
