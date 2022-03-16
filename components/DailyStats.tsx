@@ -78,6 +78,10 @@ const GraphContainer = styled.div`
   align-items: flex-start;
   justify-content: flex-start;
   gap: 20px;
+
+  @media only screen and (max-width: ${BREAKPOINTS.tablet}) {
+    width: calc(100%);
+  }
 `;
 
 const GraphWrapper = styled.div`
