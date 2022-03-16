@@ -958,7 +958,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           <Link href={"/profile"} passHref>
             <TelepromptStatusData
               style={{
-                backgroundColor: theme.teleprompt.error,
+                border: `1px solid ${theme.teleprompt.error}`,
                 cursor: "pointer",
                 whiteSpace: "normal",
               }}
