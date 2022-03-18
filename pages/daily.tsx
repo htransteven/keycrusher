@@ -1,6 +1,5 @@
 import {
   add,
-  format,
   formatDuration,
   intervalToDuration,
   isSameDay,
@@ -27,15 +26,37 @@ const LOCALSTORAGE_DAILY_STATS_KEY = "KC_DS";
 const HomePage: NextPage = () => {
   const { firestore, firebaseUser } = useFirebase();
   const [loading, setLoading] = useState(true);
-  const [challengeSummary, setChallengeSummary] =
-    useState<ChallengeSummary | null>(null);
   const [dailyStats, setDailyStats] = useState<LocalStorageDailyStats | null>(
     null
   );
   const [currentTime, setCurrenZonedtTime] = useState(Date.now());
+  const [hasAttempted, setHasAttempted] = useState(false);
+
+  // load local storage stats or initiate new
+  useEffect(() => {
+    const dailyStatsString = localStorage.getItem(LOCALSTORAGE_DAILY_STATS_KEY);
+    const newStats = dailyStatsString
+      ? JSON.parse(dailyStatsString)
+      : {
+          streak: 0,
+          history: {},
+        };
+
+    // store new local storage stats
+    if (!dailyStatsString) {
+      localStorage.setItem(
+        LOCALSTORAGE_DAILY_STATS_KEY,
+        JSON.stringify(newStats)
+      );
+    }
+    setDailyStats(newStats);
+  }, []);
 
   useEffect(() => {
     const checkForDailyChallengeAttempt = async () => {
+      // wait for local storage load
+      if (!dailyStats) return;
+
       // today's daily challenge doc id
       const today = utcToZonedTime(Date.now(), "America/Los_Angeles");
       const todayFormatted = formatInTimeZone(
@@ -44,7 +65,8 @@ const HomePage: NextPage = () => {
         "MM-dd-yyyy"
       );
 
-      // check firestore
+      // check firestore for attempt first
+      // sync firebase to local storage if needed
       if (firebaseUser) {
         const todaysAttemptDoc = await getDoc(
           doc(
@@ -54,35 +76,29 @@ const HomePage: NextPage = () => {
           )
         );
         if (todaysAttemptDoc.exists()) {
-          setChallengeSummary(todaysAttemptDoc.data() as ChallengeSummary);
+          // set firestore data in local storage to reduce cheating
+          const stats: LocalStorageDailyStats = {
+            ...dailyStats,
+            prevAttempt: todaysAttemptDoc.data() as ChallengeSummary,
+          };
+          localStorage.setItem(
+            LOCALSTORAGE_DAILY_STATS_KEY,
+            JSON.stringify(stats)
+          );
+          setHasAttempted(true);
+          setDailyStats(stats);
           setLoading(false);
           return;
         }
       }
 
-      // check local storage
-      const dailyStatsString = localStorage.getItem(
-        LOCALSTORAGE_DAILY_STATS_KEY
-      );
-
-      // no locally stored summary
-      if (!dailyStatsString) {
-        setLoading(false);
-        return;
-      }
-
-      const dailyStats = JSON.parse(dailyStatsString) as LocalStorageDailyStats;
-      if (!dailyStats) return;
-      setDailyStats(dailyStats);
-
-      if (!dailyStats.todaysAttempt) return;
-
-      // check local storage for daily attempt
-      // if not found, there is nothing left to do
+      // if no user, check local storage for today's attempt
+      // if no attempt, do nothing
       if (
-        isSameDay(
+        !dailyStats.prevAttempt ||
+        !isSameDay(
           utcToZonedTime(
-            dailyStats.todaysAttempt.time.unix.endTime,
+            dailyStats.prevAttempt.time.unix.endTime,
             "America/Los_Angeles"
           ),
           today
@@ -92,8 +108,8 @@ const HomePage: NextPage = () => {
         return;
       }
 
-      // if a daily attempt was found in local storage, upload to firebase
-      // we already know it doesn't exist because we checked above
+      // if a daily attempt was found in local storage, sync to firebase
+      // note: we already know it doesn't exist because we checked above
       if (firebaseUser) {
         try {
           await setDoc(
@@ -102,7 +118,7 @@ const HomePage: NextPage = () => {
               `stats/${firebaseUser.uid}/history`,
               `${todayFormatted}`
             ),
-            dailyStats.todaysAttempt
+            dailyStats.prevAttempt
           );
         } catch (error) {
           alert("failed to save challenge");
@@ -110,22 +126,22 @@ const HomePage: NextPage = () => {
         }
       }
 
-      setChallengeSummary(dailyStats.todaysAttempt);
+      setHasAttempted(true);
       setLoading(false);
     };
 
     checkForDailyChallengeAttempt();
-  }, [firebaseUser, firestore]);
+  }, [dailyStats, firebaseUser, firestore]);
 
   useEffect(() => {
-    if (!challengeSummary) return;
+    if (!dailyStats?.prevAttempt) return;
 
     const timer = setInterval(() => {
       setCurrenZonedtTime((prev) => prev + 1000);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [challengeSummary]);
+  }, [dailyStats?.prevAttempt]);
 
   const getDailyChallengeWords = useCallback(async () => {
     try {
@@ -162,11 +178,6 @@ const HomePage: NextPage = () => {
 
   const onComplete = useCallback(
     async (summary: ChallengeSummary) => {
-      // if there is already a record of the attempt, do nothing
-      // this limits to 1 attempt per person
-      if (challengeSummary) return;
-      setChallengeSummary(summary);
-
       // today's daily challenge doc id
       const today = utcToZonedTime(Date.now(), "America/Los_Angeles");
       const todayFormatted = formatInTimeZone(
@@ -175,18 +186,41 @@ const HomePage: NextPage = () => {
         "MM-dd-yyyy"
       );
 
-      const dailyStatsString = localStorage.getItem(
-        "LOCALSTORAGE_DAILY_STATS_KEY"
-      );
-
-      // load local storage or initiate new one
-      const dailyStats: LocalStorageDailyStats = dailyStatsString
-        ? JSON.parse(dailyStatsString)
-        : {
-            streak: 0,
-            history: {},
-            todaysAttempt: summary,
-          };
+      // CHECK IF USER HAS ALREADY ATTEMPTED TODAY'S CHALLENGE
+      if (!hasAttempted) {
+        // further checks to prevent cheating
+        if (firebaseUser) {
+          // Method 1: if user is logged in, check firestore for attempt
+          const dailyChallengeDoc = await getDoc(
+            doc(
+              firestore,
+              `stats/${firebaseUser.uid}/history`,
+              `${todayFormatted}`
+            )
+          );
+          if (dailyChallengeDoc.exists()) {
+            return;
+          } else {
+            // if user is logged in but attempt was not found in firestore, upload it
+            try {
+              await setDoc(
+                doc(
+                  firestore,
+                  `stats/${firebaseUser.uid}/history`,
+                  `${todayFormatted}`
+                ),
+                summary
+              );
+            } catch (error) {
+              alert("failed to save challenge attempt");
+              console.log(error);
+            }
+          }
+        } else if (dailyStats?.history[todayFormatted]) {
+          // Method 2: if user is not logged in, check local storage
+          return;
+        }
+      }
 
       // calculate averageRTT
       let sumRTT = 0;
@@ -201,39 +235,46 @@ const HomePage: NextPage = () => {
         }
       }
 
-      dailyStats.history = {
-        ...dailyStats.history,
-        [todayFormatted]: {
-          endTime: summary.time.unix.endTime,
-          accuracy:
-            summary.telemetry.numCorrect /
-            (summary.telemetry.numCorrect + summary.telemetry.numErrors),
-          wpm: summary.wpm,
-          averageRTT: sumRTT / sumRTTCount,
-          challengeDuration: summary.challengeDuration,
-        },
-      };
-
-      console.log(dailyStats);
-
-      console.log(
-        formatInTimeZone(
-          utcToZonedTime(
-            subDays(dailyStats.todaysAttempt.time.unix.endTime, 1),
-            "America/Los_Angeles"
-          ),
-          "America/Los_Angeles",
-          "MM-dd-yyyy"
-        )
-      );
+      const newStats: LocalStorageDailyStats = dailyStats
+        ? {
+            ...dailyStats,
+            history: {
+              ...dailyStats?.history,
+              [todayFormatted]: {
+                endTime: summary.time.unix.endTime,
+                accuracy:
+                  summary.telemetry.numCorrect /
+                  (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+                wpm: summary.wpm,
+                averageRTT: sumRTT / sumRTTCount,
+                challengeDuration: summary.challengeDuration,
+              },
+            },
+            prevAttempt: summary,
+          }
+        : {
+            streak: 1,
+            history: {
+              [todayFormatted]: {
+                endTime: summary.time.unix.endTime,
+                accuracy:
+                  summary.telemetry.numCorrect /
+                  (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+                wpm: summary.wpm,
+                averageRTT: sumRTT / sumRTTCount,
+                challengeDuration: summary.challengeDuration,
+              },
+            },
+            prevAttempt: summary,
+          };
 
       // if your history includes yesterday, increment streak
-      // otherwise, reset
+      // otherwise, reset to 1
       if (
-        dailyStats.history[
+        newStats.history[
           formatInTimeZone(
             utcToZonedTime(
-              subDays(dailyStats.todaysAttempt.time.unix.endTime, 1),
+              subDays(newStats.prevAttempt.time.unix.endTime, 1),
               "America/Los_Angeles"
             ),
             "America/Los_Angeles",
@@ -241,50 +282,22 @@ const HomePage: NextPage = () => {
           )
         ]
       ) {
-        dailyStats.streak = dailyStats.streak + 1;
+        newStats.streak = newStats.streak + 1;
       } else {
-        dailyStats.streak = 1;
+        newStats.streak = 1;
       }
 
       localStorage.setItem(
         LOCALSTORAGE_DAILY_STATS_KEY,
-        JSON.stringify(dailyStats)
+        JSON.stringify(newStats)
       );
-
-      setDailyStats(dailyStats);
-
-      if (!firebaseUser) return;
-      // if the user is logged in, upload challenge summary if first attempt
-
-      // check for first attempt
-      const dailyChallengeDoc = await getDoc(
-        doc(firestore, `stats/${firebaseUser.uid}/history`, `${todayFormatted}`)
-      );
-      if (dailyChallengeDoc.exists()) {
-        return;
-      }
-
-      // upload challenge summary
-      try {
-        await setDoc(
-          doc(
-            firestore,
-            `stats/${firebaseUser.uid}/history`,
-            `${todayFormatted}`
-          ),
-          summary
-        );
-      } catch (error) {
-        alert("failed to save challenge");
-        console.log(error);
-      }
+      setDailyStats(newStats);
+      setHasAttempted(true);
     },
-    [challengeSummary, firebaseUser, firestore]
+    [dailyStats, firebaseUser, firestore, hasAttempted]
   );
 
-  const onReset = useCallback(() => {
-    setChallengeSummary(null);
-  }, []);
+  console.log(dailyStats);
 
   return (
     <>
@@ -301,7 +314,7 @@ const HomePage: NextPage = () => {
           <Teleprompter
             mode={"daily"}
             coverText={
-              challengeSummary
+              hasAttempted
                 ? `Next challenge: ${formatDuration(
                     intervalToDuration({
                       end: add(
@@ -317,13 +330,17 @@ const HomePage: NextPage = () => {
                 : "Ready for the daily challenge?"
             }
             onMoreWords={getDailyChallengeWords}
-            onComplete={onComplete}
-            onReset={onReset}
-            disabled={!!challengeSummary}
+            onComplete={hasAttempted ? () => {} : onComplete}
+            onReset={() => {}}
+            disabled={hasAttempted}
           />
         )}
-        {challengeSummary && <PostChallengeStats {...challengeSummary} />}
-        {dailyStats && <DailyStats {...dailyStats} />}
+        {dailyStats?.prevAttempt && (
+          <PostChallengeStats {...dailyStats.prevAttempt} />
+        )}
+        {dailyStats && Object.keys(dailyStats.history).length > 0 && (
+          <DailyStats {...dailyStats} />
+        )}
       </Container>
     </>
   );

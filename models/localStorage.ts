@@ -3,7 +3,7 @@ import { ChallengeSummary } from "./ChallengeSummary";
 export interface LocalStorageDailyStats {
   streak: number;
   history: { [date: string]: LocalStorageChallengeSummary };
-  todaysAttempt: ChallengeSummary;
+  prevAttempt: ChallengeSummary;
 }
 
 export interface LocalStorageChallengeSummary {
