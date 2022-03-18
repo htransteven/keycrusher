@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
+const datefns = require("date-fns");
 const datefnsTz = require("date-fns-tz");
 
 // // Start writing Firebase Functions
@@ -62,7 +63,10 @@ export const scheduledFunctionCrontab = functions.pubsub
         .collection("daily")
         .doc(
           datefnsTz.formatInTimeZone(
-            datefnsTz.utcToZonedTime(Date.now(), "America/Los_Angeles"),
+            datefns.addDays(
+              datefnsTz.utcToZonedTime(Date.now(), "America/Los_Angeles"),
+              1
+            ),
             "America/Los_Angeles",
             "MM-dd-yyyy"
           )
@@ -70,6 +74,8 @@ export const scheduledFunctionCrontab = functions.pubsub
         .create(newDailyChallenge);
     });
 
-    // Once the thumbnail has been uploaded delete the local file to free up disk space.
-    return fs.unlinkSync(tempFilePath);
+    // delete temporary words file
+    await fs.unlink(tempFilePath, () => {
+      functions.logger.log("Deleted file at: ", tempFilePath);
+    });
   });

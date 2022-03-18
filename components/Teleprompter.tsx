@@ -512,21 +512,23 @@ const reducer = (
   }
 };
 
-interface Teleprompter extends Partial<TeleprompterState> {
+interface Teleprompter
+  extends Partial<Pick<TeleprompterState, "mode" | "challengeDuration">> {
   onMoreWords: (wordCount: number) => Promise<string[] | null>;
   onComplete: (state: ChallengeSummary) => void;
   onReset: () => void;
   coverText?: string;
+  disabled?: boolean; // use to disable input
 }
 
 export const Teleprompter: React.FC<Teleprompter> = ({
   mode = "default",
   challengeDuration = 30,
   coverText = "Ready for the challenge?",
+  disabled,
   onMoreWords,
   onComplete,
   onReset,
-  ...stateOverride
 }) => {
   const theme = useTheme();
   const { firebaseUser } = useFirebase();
@@ -534,7 +536,6 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     ...INITIAL_STATE,
     mode,
     challengeDuration: mode === "daily" ? -1 : challengeDuration,
-    ...stateOverride,
   });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [wordRef, setWordRef] = useState<HTMLSpanElement | null>(null);
@@ -565,7 +566,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           if (e.ctrlKey) {
             handleReset();
           } else {
-            if (state.time.unix.endTime !== 0 || coverTimer !== 4) return;
+            if (disabled || coverTimer !== 4) return;
             setCoverTimer(3);
             setTimeout(() => inputRef?.current?.focus(), 100);
           }
@@ -581,7 +582,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     return () => {
       window.removeEventListener("keydown", handleGlobalReset);
     };
-  }, [coverTimer, handleReset, state.time.unix.endTime]);
+  }, [coverTimer, disabled, handleReset, state.time.unix.endTime]);
 
   // Teleprompt cover interval timer
   useEffect(() => {
@@ -723,7 +724,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       if (target.value.charAt(target.value.length - 1) === " ") {
         if (target.value === " ") {
           // begin countdown if not yet started
-          if (coverTimer !== 4) return;
+          if (disabled || coverTimer !== 4) return;
           setCoverTimer(3);
           return;
         }
@@ -765,6 +766,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     },
     [
       coverTimer,
+      disabled,
       nextWordRef,
       state.active,
       state.currentWordIndex,
@@ -840,7 +842,8 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     ]
   );
 
-  const getPlaceHolderText = () => {
+  const getPlaceHolderText = useCallback(() => {
+    if (disabled) return "";
     if (state.active) {
       return "";
     } else {
@@ -857,7 +860,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       }
       return "";
     }
-  };
+  }, [disabled, state.active, state.mode, state.time.unix.endTime]);
 
   return (
     <Container>
@@ -899,7 +902,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             onChange={handleChange}
             value={state.userInput}
             placeholder={getPlaceHolderText()}
-            disabled={state.time.unix.endTime !== 0}
+            disabled={disabled || state.time.unix.endTime !== 0}
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
@@ -910,7 +913,8 @@ export const Teleprompter: React.FC<Teleprompter> = ({
               display: state.active ? "none" : "",
             }}
           >
-            {state.time.unix.endTime === 0 && coverTimer > 3 ? (
+            {disabled ? null : state.time.unix.endTime === 0 &&
+              coverTimer > 3 ? (
               <>
                 Press <KeyCap value="Space" /> to start
               </>

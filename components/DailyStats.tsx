@@ -13,6 +13,7 @@ import {
 import styled, { useTheme } from "styled-components";
 import { LocalStorageDailyStats } from "../models/localStorage";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { toFixed } from "../utils/numbers";
 
 const Container = styled.div`
   width: 100%;
@@ -136,39 +137,103 @@ const Data: React.FC<{ label: string; value: React.ReactNode }> = ({
   );
 };
 
+interface AverageCalculations {
+  sumWPM: number;
+  countWPM: number;
+  sumAccuracy: number;
+  countAccuracy: number;
+  sumRTT: number;
+  countRTT: number;
+  sumCD: number;
+  countCD: number;
+}
+
+interface Averages {
+  wpm: number;
+  accuracy: number;
+  rtt: number;
+  challengeDuration: number;
+}
+
+interface SummaryArrayTransformed {
+  wpm: number[];
+  accuracy: number[];
+  rtt: number[];
+  challengeDuration: number[];
+  endTime: number[];
+}
+
 export const DailyStats: React.FC<LocalStorageDailyStats> = ({
   streak,
   history,
 }) => {
   const theme = useTheme();
-  const averageAccuracy =
-    (history.accuracy.reduce((prev, curr) => prev + curr, 0) /
-      history.accuracy.length) *
-    100;
+  const averageCalculations: AverageCalculations = {
+    sumWPM: 0,
+    countWPM: 0,
+    sumAccuracy: 0,
+    countAccuracy: 0,
+    sumRTT: 0,
+    countRTT: 0,
+    sumCD: 0,
+    countCD: 0,
+  };
+  const data: SummaryArrayTransformed = Object.keys(history).reduce(
+    (acc: SummaryArrayTransformed, curr) => {
+      const summary = history[curr];
+      averageCalculations.sumWPM = averageCalculations.sumWPM + summary.wpm;
+      averageCalculations.countWPM = averageCalculations.countWPM + 1;
+      averageCalculations.sumAccuracy =
+        averageCalculations.sumAccuracy + summary.accuracy;
+      averageCalculations.countAccuracy = averageCalculations.countAccuracy + 1;
+      averageCalculations.sumRTT =
+        averageCalculations.sumRTT + summary.averageRTT;
+      averageCalculations.countRTT = averageCalculations.countRTT + 1;
+      averageCalculations.sumCD =
+        averageCalculations.sumCD + summary.challengeDuration;
+      averageCalculations.countCD = averageCalculations.countCD + 1;
 
-  const averageWPM =
-    history.wpm.reduce((prev, curr) => prev + curr, 0) / history.wpm.length;
-  const averageRTT =
-    history.rtt.reduce((prev, curr) => prev + curr, 0) / history.rtt.length;
-
-  const averageChallengeDuration =
-    history.challengeDuration.reduce((prev, curr) => prev + curr, 0) /
-    history.challengeDuration.length;
+      return {
+        wpm: [...acc.wpm, summary.wpm],
+        accuracy: [...acc.accuracy, summary.accuracy],
+        rtt: [...acc.rtt, summary.averageRTT],
+        challengeDuration: [
+          ...acc.challengeDuration,
+          summary.challengeDuration,
+        ],
+        endTime: [...acc.endTime, summary.endTime],
+      };
+    },
+    {
+      wpm: [],
+      accuracy: [],
+      rtt: [],
+      challengeDuration: [],
+      endTime: [],
+    }
+  );
+  const averages: Averages = {
+    wpm: averageCalculations.sumWPM / averageCalculations.countWPM,
+    accuracy:
+      averageCalculations.sumAccuracy / averageCalculations.countAccuracy,
+    rtt: averageCalculations.sumRTT / averageCalculations.countRTT,
+    challengeDuration: averageCalculations.sumCD / averageCalculations.countCD,
+  };
 
   return (
     <Container>
       <Title>Daily Challenge Stats</Title>
       <DailyChallengeSummaryContainer>
         <Data label={"Streak 🔥"} value={streak} />
-        <Data label="Average WPM" value={`${averageWPM.toFixed(2)} wpm`} />
-        <Data label="Average RTT" value={`${averageRTT.toFixed(2)} ms`} />
+        <Data label="Average WPM" value={`${toFixed(averages.wpm, 2)} wpm`} />
         <Data
           label="Average Accuracy"
-          value={`${averageAccuracy.toFixed(2)}%`}
+          value={`${toFixed(averages.accuracy * 100, 2)}%`}
         />
+        <Data label="Average RTT" value={`${toFixed(averages.rtt, 2)} ms`} />
         <Data
           label="Average Challenge Duration"
-          value={`${averageChallengeDuration.toFixed(2)} ms`}
+          value={`${toFixed(averages.challengeDuration / 1000, 3)} s`}
         />
       </DailyChallengeSummaryContainer>
       <GraphGrid>
@@ -179,13 +244,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
           <GraphWrapper>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={history.wpm.map((wpm, index) => ({
+                data={data.wpm.map((wpm, index) => ({
                   wpm,
                   day: formatInTimeZone(
-                    utcToZonedTime(
-                      history.endTimes[index],
-                      "America/Los_Angeles"
-                    ),
+                    utcToZonedTime(data.endTime[index], "America/Los_Angeles"),
                     "America/Los_Angeles",
                     "MM-dd-yyyy"
                   ),
@@ -204,10 +266,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
-                  y={averageWPM}
+                  y={averages.wpm}
                   label={
                     <Label
-                      value={`Average WPM = ${averageWPM.toFixed(2)} wpm`}
+                      value={`Average WPM = ${averages.wpm.toFixed(2)} wpm`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}
@@ -228,13 +290,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
           <GraphWrapper>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={history.rtt.map((rtt, index) => ({
-                  rtt: Math.round((rtt + Number.EPSILON) * 100) / 100,
+                data={data.rtt.map((rtt, index) => ({
+                  rtt: toFixed(rtt, 2),
                   day: formatInTimeZone(
-                    utcToZonedTime(
-                      history.endTimes[index],
-                      "America/Los_Angeles"
-                    ),
+                    utcToZonedTime(data.endTime[index], "America/Los_Angeles"),
                     "America/Los_Angeles",
                     "MM-dd-yyyy"
                   ),
@@ -257,10 +316,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
-                  y={averageRTT}
+                  y={averages.rtt}
                   label={
                     <Label
-                      value={`Average RTT = ${averageRTT.toFixed(2)} ms`}
+                      value={`Average RTT = ${averages.rtt.toFixed(2)} ms`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}
@@ -281,14 +340,10 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
           <GraphWrapper>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={history.accuracy.map((accuracy, index) => ({
-                  accuracy:
-                    Math.round((accuracy * 100 + Number.EPSILON) * 100) / 100,
+                data={data.accuracy.map((accuracy, index) => ({
+                  accuracy: toFixed(accuracy * 100, 2),
                   day: formatInTimeZone(
-                    utcToZonedTime(
-                      history.endTimes[index],
-                      "America/Los_Angeles"
-                    ),
+                    utcToZonedTime(data.endTime[index], "America/Los_Angeles"),
                     "America/Los_Angeles",
                     "MM-dd-yyyy"
                   ),
@@ -311,10 +366,11 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
-                  y={averageAccuracy}
+                  y={toFixed(averages.accuracy * 100, 2)}
                   label={
                     <Label
-                      value={`Average Accuracy = ${averageAccuracy.toFixed(
+                      value={`Average Accuracy = ${toFixed(
+                        averages.accuracy * 100,
                         2
                       )}%`}
                       fill={theme.graphs.referenceLineColor}
@@ -337,15 +393,12 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
           <GraphWrapper>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={history.challengeDuration.map(
+                data={data.challengeDuration.map(
                   (challengeDuration, index) => ({
-                    challengeDuration:
-                      Math.round(
-                        (challengeDuration / 1000 + Number.EPSILON) * 1000
-                      ) / 1000,
+                    challengeDuration: toFixed(challengeDuration / 1000, 3),
                     day: formatInTimeZone(
                       utcToZonedTime(
-                        history.endTimes[index],
+                        data.endTime[index],
                         "America/Los_Angeles"
                       ),
                       "America/Los_Angeles",
@@ -360,7 +413,7 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                   dataKey="challengeDuration"
                   stroke={theme.graphs.data.active}
                   activeDot={{ r: 8 }}
-                  unit={"ms"}
+                  unit={"s"}
                 />
                 <XAxis dataKey="day" stroke={theme.graphs.axis.color} />
                 <YAxis
@@ -371,19 +424,13 @@ export const DailyStats: React.FC<LocalStorageDailyStats> = ({
                 <Tooltip />
                 <ReferenceLine
                   isFront={true}
-                  y={
-                    Math.round(
-                      (averageChallengeDuration / 1000 + Number.EPSILON) * 1000
-                    ) / 1000
-                  }
+                  y={toFixed(averages.challengeDuration / 1000, 3)}
                   label={
                     <Label
-                      value={`Average Challenge Duration = ${
-                        Math.round(
-                          (averageChallengeDuration / 1000 + Number.EPSILON) *
-                            1000
-                        ) / 1000
-                      } s`}
+                      value={`Average Challenge Duration = ${toFixed(
+                        averages.challengeDuration / 1000,
+                        3
+                      )} s`}
                       fill={theme.graphs.referenceLineColor}
                       position={"insideBottomRight"}
                       fontSize={"0.6rem"}

@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { ChallengeSummary as ChallengeSummaryProps } from "../models/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { toFixed } from "../utils/numbers";
 
 const Container = styled.div`
   display: flex;
@@ -60,10 +61,10 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
   const { numCorrect, numErrors } = telemetry;
   return (
     <Container>
-      <Data label="WPM" value={`${wpm.toFixed(0)} wpm`} />
+      <Data label="WPM" value={`${toFixed(wpm, 2)} wpm`} />
       <Data
         label="Accuracy"
-        value={`${((numCorrect / (numCorrect + numErrors)) * 100).toFixed(2)}%`}
+        value={`${toFixed((numCorrect / (numCorrect + numErrors)) * 100, 2)}%`}
       />
       <Data label="Mistakes" value={numErrors} />
       <Data
@@ -71,9 +72,10 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
         value={
           mode === "default"
             ? `${challengeDuration}s`
-            : `${(
-                time.performance.endTime - time.performance.startTime
-              ).toFixed(2)} ms`
+            : `${toFixed(
+                (time.performance.endTime - time.performance.startTime) / 1000,
+                3
+              )} s`
         }
       />
     </Container>
