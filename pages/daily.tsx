@@ -55,7 +55,7 @@ const HomePage: NextPage = () => {
   useEffect(() => {
     const checkForDailyChallengeAttempt = async () => {
       // wait for local storage load
-      if (!dailyStats) return;
+      if (!dailyStats || !loading) return;
 
       // today's daily challenge doc id
       const today = utcToZonedTime(Date.now(), "America/Los_Angeles");
@@ -131,7 +131,7 @@ const HomePage: NextPage = () => {
     };
 
     checkForDailyChallengeAttempt();
-  }, [dailyStats, firebaseUser, firestore]);
+  }, [dailyStats, firebaseUser, firestore, loading]);
 
   useEffect(() => {
     if (!dailyStats?.prevAttempt) return;
@@ -296,8 +296,6 @@ const HomePage: NextPage = () => {
     },
     [dailyStats, firebaseUser, firestore, hasAttempted]
   );
-
-  console.log(dailyStats);
 
   return (
     <>
