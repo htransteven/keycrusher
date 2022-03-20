@@ -3,9 +3,11 @@ export interface User {
   email: string;
   lastLoggedIn: number;
   created: number;
+  /*
   oauth?: {
     providerId: string;
     idToken?: string;
     accessToken?: string;
   };
+  */
 }
