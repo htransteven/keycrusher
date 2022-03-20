@@ -135,7 +135,8 @@ export const Login = () => {
         throw new Error("More than one user was found with that email address");
       }
       // user with that email does not exist, create a new user
-      if (!querySnapshot.empty) {
+      if (querySnapshot.empty) {
+        console.log("creating new user via google");
         let i = 1;
         const baseUsername = userCreds.user.email.substring(
           0,
@@ -169,6 +170,7 @@ export const Login = () => {
           created: now,
         };
 
+        /*
         const credential = GoogleAuthProvider.credentialFromResult(userCreds);
         if (credential) {
           userPayload["oauth"] = {
@@ -177,6 +179,7 @@ export const Login = () => {
             accessToken: credential.accessToken,
           };
         }
+        */
         // create new user
         await setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
       } else {
@@ -240,24 +243,12 @@ export const Login = () => {
     }
 
     try {
-      // check for accounts with same email
-      const existingUserDocsWithSameEmail = await getDocs(
-        query(collection(firestore, "users"), where("email", "==", email))
-      );
-      if (existingUserDocsWithSameEmail) {
-        throw new Error(
-          "There is already an account with that email. Please use a different one."
-        );
-      }
-
       // check for accounts with same username
       const existingUserDocsWithSameUsername = await getDocs(
         query(collection(firestore, "users"), where("username", "==", username))
       );
-      if (existingUserDocsWithSameUsername) {
-        throw new Error(
-          "That username is already taken. Please use a different one."
-        );
+      if (!existingUserDocsWithSameUsername.empty) {
+        throw new Error("That username is already taken.");
       }
 
       // create account
@@ -269,7 +260,7 @@ export const Login = () => {
 
       // create user
       const now = Date.now();
-      await setDoc(doc(firestore, "users", username), {
+      await setDoc(doc(firestore, "users", userCreds.user.uid), {
         username,
         email,
         lastLoggedIn: now,
@@ -282,6 +273,10 @@ export const Login = () => {
       switch (errorCode) {
         case "auth/weak-password": {
           setErrorMessage("Please use a stronger password.");
+          break;
+        }
+        case "auth/email-already-in-use": {
+          setErrorMessage("That email is aready in use.");
           break;
         }
         default: {
