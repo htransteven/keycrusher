@@ -5,10 +5,10 @@ import styled from "styled-components";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { ChallengeSummary } from "../models/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { Loading } from "./Loading";
 
 const Container = styled.div`
   display: flex;
-  flex: auto;
   flex-flow: column wrap;
   gap: 10px;
 `;
@@ -103,9 +103,11 @@ export const UserHistory = () => {
       setHistory(data);
     });
   }, [firebaseUser, firestore]);
+
   return (
     <Container>
       <Title>History</Title>
+      {!history && <Loading value="LOADING HISTORY" />}
       {history &&
         history.map((summary) => (
           <HistoryEntry key={summary.time.unix.endTime}>

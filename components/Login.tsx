@@ -5,7 +5,16 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { TextInput } from "./form/TextInput";
 import { Button } from "./form/Button";
@@ -101,136 +110,188 @@ export const Login = () => {
   const [waiting, setWaiting] = useState(false);
 
   const handleGoogleSignIn = useCallback(async () => {
-    // Sign in using a redirect.
     const provider = new GoogleAuthProvider();
-    // Start a sign in process for an unauthenticated user.
     provider.addScope("profile");
     provider.addScope("email");
-    //await signInWithRedirect(auth, provider);
     setWaiting(true);
-    await signInWithPopup(auth, provider)
-      .then((userCreds) => {
-        setWaiting(false);
-        getDoc(doc(firestore, "users", userCreds.user.uid)).then((userDoc) => {
-          if (!userDoc.exists()) {
-            if (!userCreds.user.email)
-              throw new Error(
-                "The user from Google's redirect result has no email"
-              );
-            const now = Date.now();
-            const userPayload: User = {
-              username: userCreds.user.email.substring(
-                0,
-                userCreds.user.email.indexOf("@")
-              ),
-              email: userCreds.user.email,
-              lastLoggedIn: now,
-              created: now,
-            };
 
-            const credential =
-              GoogleAuthProvider.credentialFromResult(userCreds);
-            if (credential) {
-              userPayload["oauth"] = {
-                providerId: credential.providerId,
-                idToken: credential.idToken,
-                accessToken: credential.accessToken,
-              };
-            }
-            setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
-          } else {
-            const now = Date.now();
-            updateDoc(doc(firestore, "users", userCreds.user.uid), {
-              lastLoggedIn: now,
-            });
-          }
-          setFirebaseUser(userCreds.user);
-        });
-      })
-      .catch((error) => {
-        setWaiting(false);
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        if (errorCode === "auth/popup-closed-by-user") {
-          setErrorMessage("Login window was closed, please try again.");
-        } else {
-          setErrorMessage(errorMessage);
+    try {
+      // use popup to sign in with google
+      const userCreds = await signInWithPopup(auth, provider);
+      if (!userCreds.user.email) {
+        throw new Error("The user from Google's redirect result has no email");
+      }
+
+      // find user with same email
+      const querySnapshot = await getDocs(
+        query(
+          collection(firestore, "users"),
+          where("email", "==", userCreds.user.email)
+        )
+      );
+
+      // check for multiple users with same email
+      if (querySnapshot.size > 1) {
+        throw new Error("More than one user was found with that email address");
+      }
+      // user with that email does not exist, create a new user
+      if (!querySnapshot.empty) {
+        let i = 1;
+        const baseUsername = userCreds.user.email.substring(
+          0,
+          userCreds.user.email.indexOf("@")
+        );
+        let generatedUsername = baseUsername;
+
+        // avoid duplicate usernames
+        let existingUserDocsWithSameUsername = await getDocs(
+          query(
+            collection(firestore, "users"),
+            where("username", "==", username)
+          )
+        );
+        while (!existingUserDocsWithSameUsername.empty) {
+          generatedUsername = `${baseUsername}${i}`;
+          i++;
+          existingUserDocsWithSameUsername = await getDocs(
+            query(
+              collection(firestore, "users"),
+              where("username", "==", username)
+            )
+          );
         }
-        console.log(error);
-      });
-    // This will trigger a full page redirect away from your app
-    // See FirebaseContext.tsx for capturing redirect results
-  }, [auth, firestore, setFirebaseUser]);
 
-  const handleSignIn = useCallback(() => {
+        const now = Date.now();
+        const userPayload: User = {
+          username: generatedUsername,
+          email: userCreds.user.email,
+          lastLoggedIn: now,
+          created: now,
+        };
+
+        const credential = GoogleAuthProvider.credentialFromResult(userCreds);
+        if (credential) {
+          userPayload["oauth"] = {
+            providerId: credential.providerId,
+            idToken: credential.idToken,
+            accessToken: credential.accessToken,
+          };
+        }
+        // create new user
+        await setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
+      } else {
+        // user found
+        await updateDoc(doc(firestore, "users", userCreds.user.uid), {
+          lastLoggedIn: Date.now(),
+        });
+      }
+      setFirebaseUser(userCreds.user);
+    } catch (error: any) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      if (errorCode === "auth/popup-closed-by-user") {
+        setErrorMessage("Login window was closed, please try again.");
+      } else {
+        setErrorMessage(errorMessage);
+      }
+      console.log(error);
+    } finally {
+      setWaiting(false);
+    }
+  }, [auth, firestore, setFirebaseUser, username]);
+
+  const handleSignIn = useCallback(async () => {
     if (email.length < 4 || !email.includes("@")) {
       setErrorMessage("Please enter a valid email address.");
       return;
     }
 
-    // Sign in with email and pass.
+    // sign in with email and password
     setWaiting(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCreds) => {
-        setWaiting(false);
-        const now = Date.now();
-        updateDoc(doc(firestore, "users", userCreds.user.uid), {
-          lastLoggedIn: now,
-        });
-        setFirebaseUser(userCreds.user);
-      })
-      .catch(function (error) {
-        setWaiting(false);
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        if (errorCode === "auth/wrong-password") {
-          setErrorMessage("Incorrect password");
-        } else if (errorCode === "auth/user-not-found") {
-          setSignUpForm(true);
-          setErrorMessage("No user found with that email");
-        } else {
-          setErrorMessage(errorMessage);
-        }
-        console.log(error);
+    try {
+      const userCreds = await signInWithEmailAndPassword(auth, email, password);
+      updateDoc(doc(firestore, "users", userCreds.user.uid), {
+        lastLoggedIn: Date.now(),
       });
+      setFirebaseUser(userCreds.user);
+    } catch (error: any) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      if (errorCode === "auth/wrong-password") {
+        setErrorMessage("Incorrect password");
+      } else if (errorCode === "auth/user-not-found") {
+        setSignUpForm(true);
+        setErrorMessage("No user found with that email");
+      } else {
+        setErrorMessage(errorMessage);
+      }
+    } finally {
+      setWaiting(false);
+    }
   }, [auth, email, firestore, password, setFirebaseUser]);
 
   /**
    * Handles the sign up button press.
    */
-  const handleSignUp = useCallback(() => {
+  const handleSignUp = useCallback(async () => {
     if (email.length < 4 || !email.includes("@")) {
       setErrorMessage("Please enter a valid email address.");
       return;
     }
 
-    // Create user with email and pass.
-    setWaiting(true);
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCreds) => {
-        setWaiting(false);
-        const now = Date.now();
-        setDoc(doc(firestore, "users", userCreds.user.uid), {
-          username,
-          email,
-          lastLoggedIn: now,
-          created: now,
-        });
-        setFirebaseUser(userCreds.user);
-      })
-      .catch(function (error) {
-        setWaiting(false);
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        if (errorCode == "auth/weak-password") {
+    try {
+      // check for accounts with same email
+      const existingUserDocsWithSameEmail = await getDocs(
+        query(collection(firestore, "users"), where("email", "==", email))
+      );
+      if (existingUserDocsWithSameEmail) {
+        throw new Error(
+          "There is already an account with that email. Please use a different one."
+        );
+      }
+
+      // check for accounts with same username
+      const existingUserDocsWithSameUsername = await getDocs(
+        query(collection(firestore, "users"), where("username", "==", username))
+      );
+      if (existingUserDocsWithSameUsername) {
+        throw new Error(
+          "That username is already taken. Please use a different one."
+        );
+      }
+
+      // create account
+      const userCreds = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // create user
+      const now = Date.now();
+      await setDoc(doc(firestore, "users", username), {
+        username,
+        email,
+        lastLoggedIn: now,
+        created: now,
+      });
+      setFirebaseUser(userCreds.user);
+    } catch (error: any) {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      switch (errorCode) {
+        case "auth/weak-password": {
           setErrorMessage("Please use a stronger password.");
-        } else {
+          break;
+        }
+        default: {
           setErrorMessage(errorMessage);
         }
-        console.log(error);
-      });
+      }
+      console.log(error);
+    } finally {
+      setWaiting(false);
+    }
   }, [auth, email, firestore, password, setFirebaseUser, username]);
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {

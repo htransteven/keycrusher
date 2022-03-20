@@ -1,4 +1,11 @@
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { createContext, useContext, useEffect, useState } from "react";
 import { User } from "../models/User";
 import { useFirebase } from "./FirebaseContext";
@@ -23,25 +30,31 @@ export const UserProvider: React.FC = ({ children }) => {
   const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
-    if (!firebaseUser) {
-      setUser(null);
-      return;
-    }
+    const loadUser = async () => {
+      if (!firebaseUser) {
+        setUser(null);
+        return;
+      }
 
-    if (!firestore) return;
+      if (!firestore) return;
 
-    setLoadingUser(true);
-    getDoc(doc(firestore, "users", firebaseUser.uid))
-      .then((userDoc) => {
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+      setLoadingUser(true);
+      try {
+        const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
+        if (!userDoc.exists()) {
+          throw new Error("no user found");
         }
-        setLoadingUser(false);
-      })
-      .catch((error) => {
+
+        setUser(userDoc.data() as User);
+      } catch (error: any) {
         alert("An error occured when trying to find the user's document");
         console.log(error);
-      });
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    loadUser();
   }, [firebaseUser, firestore]);
 
   return (

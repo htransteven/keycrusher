@@ -33,7 +33,7 @@ export const Loading: React.FC<{ value?: string }> = ({
         .split("")
         .map((char, index) =>
           char === " " ? (
-            <span> </span>
+            <span key={`loading-space-${index}`}> </span>
           ) : (
             <KeyCap
               key={`loading-key-${index}`}

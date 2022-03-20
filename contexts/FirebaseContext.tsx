@@ -1,22 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { initializeApp, FirebaseApp } from "firebase/app";
 import { Analytics, getAnalytics } from "firebase/analytics";
-import {
-  Auth,
-  getAuth,
-  getRedirectResult,
-  GoogleAuthProvider,
-  User as FirebaseUser,
-} from "firebase/auth";
-import {
-  doc,
-  Firestore,
-  getDoc,
-  getFirestore,
-  setDoc,
-} from "firebase/firestore";
-import { getUnixTime } from "date-fns";
-import { User } from "../models/User";
+import { Auth, getAuth, User as FirebaseUser } from "firebase/auth";
+import { Firestore, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcrT1jyxO17nfGPOwwFrvLTMCM_a290J4",
@@ -61,9 +47,9 @@ export const FirebaseProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     if (!auth) return;
-    const subscriber = auth.onAuthStateChanged((user) => {
-      if (user?.uid !== firebaseUser?.uid) {
-        setFirebaseUser(user);
+    const subscriber = auth.onAuthStateChanged((newFirebaseUser) => {
+      if (newFirebaseUser?.uid !== firebaseUser?.uid) {
+        setFirebaseUser(newFirebaseUser);
       }
     });
     return subscriber;
