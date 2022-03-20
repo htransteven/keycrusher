@@ -25,7 +25,7 @@ export const useUser = () => {
 };
 
 export const UserProvider: React.FC = ({ children }) => {
-  const { firestore, firebaseUser } = useFirebase();
+  const { firestore, firebaseUser, setFirebaseUser } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(false);
 
@@ -42,12 +42,12 @@ export const UserProvider: React.FC = ({ children }) => {
       try {
         const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
         if (!userDoc.exists()) {
+          setFirebaseUser(null);
           throw new Error("no user found");
         }
 
         setUser(userDoc.data() as User);
       } catch (error: any) {
-        alert("An error occured when trying to find the user's document");
         console.log(error);
       } finally {
         setLoadingUser(false);
@@ -55,7 +55,7 @@ export const UserProvider: React.FC = ({ children }) => {
     };
 
     loadUser();
-  }, [firebaseUser, firestore]);
+  }, [firebaseUser, firestore, setFirebaseUser]);
 
   return (
     <UserContext.Provider value={{ user, loadingUser }}>

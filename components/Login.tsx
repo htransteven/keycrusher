@@ -134,9 +134,9 @@ export const Login = () => {
       if (querySnapshot.size > 1) {
         throw new Error("More than one user was found with that email address");
       }
+
       // user with that email does not exist, create a new user
       if (querySnapshot.empty) {
-        console.log("creating new user via google");
         let i = 1;
         const baseUsername = userCreds.user.email.substring(
           0,
