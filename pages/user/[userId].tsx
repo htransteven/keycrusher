@@ -1,15 +1,16 @@
 import { format } from "date-fns";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useCallback, useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
-import { Button } from "../components/form/Button";
-import { Loading } from "../components/Loading";
-import { Login } from "../components/Login";
-import { UserHistory } from "../components/UserHistory";
-import { useFirebase } from "../contexts/FirebaseContext";
-import { useUser } from "../contexts/UserContext";
-import { APIResponse_User_Network } from "../models/network";
-import { BREAKPOINTS } from "../styles/breakpoints";
+import { Button } from "../../components/form/Button";
+import { Loading } from "../../components/Loading";
+import { Login } from "../../components/Login";
+import { UserHistory } from "../../components/UserHistory";
+import { useFirebase } from "../../contexts/FirebaseContext";
+import { APIResponse_User_Network } from "../../models/network";
+import { User } from "../../models/User";
+import { BREAKPOINTS } from "../../styles/breakpoints";
 
 const Container = styled.div`
   width: 100%;
@@ -136,11 +137,45 @@ const UserIcon: React.FC<{ username: string }> = ({ username }) => {
   );
 };
 
-const ProfilePage = () => {
-  const { auth } = useFirebase();
-  const { user, loadingUser } = useUser();
-  const [followers, setFollowers] = useState<string[] | null>(null);
-  const [following, setFollowing] = useState<string[] | null>(null);
+interface PageParams {
+  userId?: string;
+}
+
+const UserPage = () => {
+  const router = useRouter();
+  const { firebaseUser } = useFirebase();
+  const [followers, setFollowers] = useState<string[]>([]);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+
+  const { userId } = router.query as PageParams;
+
+  useEffect(() => {
+    const loadUser = async () => {
+      if (!userId) {
+        //router.replace("/profile");
+        return;
+      }
+
+      const query = new URLSearchParams();
+      if (userId.includes("@")) {
+        query.append("email", `${userId}`);
+      } else {
+        query.append("username", `${userId}`);
+      }
+
+      const res = await fetch(`/api/user?${query.toString()}`);
+      if (!res.ok) {
+        alert("failed to get user");
+        console.log(await res.json());
+      }
+      setUser((await res.json()) as User);
+      setLoadingUser(false);
+    };
+
+    loadUser();
+  }, [router, userId]);
 
   useEffect(() => {
     const loadFollowersAndFollowing = async () => {
@@ -164,6 +199,19 @@ const ProfilePage = () => {
     loadFollowersAndFollowing();
   }, [user]);
 
+  const handleFollow = useCallback(async () => {
+    if (!user || !firebaseUser) return;
+    const res = await fetch("/api/user/network/follow", {
+      method: "POST",
+      headers: { authorization: `Bearer ${firebaseUser?.uid}` },
+      body: JSON.stringify({ email: user.email }),
+    });
+    if (!res.ok) {
+      alert("failex to follkow user");
+      console.log(await res.json());
+    }
+  }, [firebaseUser, user]);
+
   return (
     <>
       <Head>
@@ -185,9 +233,7 @@ const ProfilePage = () => {
                 label="Member Since"
                 value={format(user.created, "MMM d, yyyy")}
               />
-              <Button variant={"negative"} onClick={() => auth.signOut()}>
-                Sign out
-              </Button>
+              <Button onClick={handleFollow}>Follow</Button>
             </Keycard>
             <UserNetworkContainer>
               <span>Followers</span>
@@ -229,4 +275,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default UserPage;

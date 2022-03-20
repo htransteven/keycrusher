@@ -52,6 +52,19 @@ export const DARK_THEME = {
         backgroundColor: COLOR_PALLETE.baseBlue,
       },
     },
+    userNetwork: {
+      userIcon: {
+        backgroundColors: [
+          "#7A0BC0",
+          "#ECB365",
+          "#FF4C29",
+          "#ED6663",
+          "#3282B8",
+          "#AD62AA",
+          "#8787A3",
+        ],
+      },
+    },
   },
   tooltip: {
     backgroundColor: COLOR_PALLETE.baseBlue,

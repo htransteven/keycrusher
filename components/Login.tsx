@@ -182,6 +182,10 @@ export const Login = () => {
         */
         // create new user
         await setDoc(doc(firestore, "users", userCreds.user.uid), userPayload);
+        await setDoc(doc(firestore, "network", userCreds.user.uid), {
+          followers: [],
+          following: [],
+        });
       } else {
         // user found
         await updateDoc(doc(firestore, "users", userCreds.user.uid), {
@@ -265,6 +269,10 @@ export const Login = () => {
         email,
         lastLoggedIn: now,
         created: now,
+      });
+      await setDoc(doc(firestore, "network", userCreds.user.uid), {
+        followers: [],
+        following: [],
       });
       setFirebaseUser(userCreds.user);
     } catch (error: any) {
