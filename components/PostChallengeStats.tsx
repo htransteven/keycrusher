@@ -196,7 +196,7 @@ export const PostChallengeStats: React.FC<ChallengeSummaryProps> = ({
 
   return (
     <Container>
-      <Title>Post Challenge Summary</Title>
+      <Title>Previous Challenge Summary</Title>
       <ChallengeSummary telemetry={telemetry} {...summaryProps} />
       <GraphContainer>
         <GraphInfo>
