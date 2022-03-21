@@ -1,8 +1,7 @@
-import { firestore } from "firebase-admin";
 import { NextApiHandler } from "next";
 import admin from "../../../lib/firebase";
 import { UserNetwork } from "../../../models/firestore/Network";
-import { User } from "../../../models/firestore/User";
+import { userIdNetworkToUsernameNetwork } from "../../../utils/api/userIdNetworkToUsernameNetwork";
 
 interface GETQuery {
   email?: string;
@@ -51,35 +50,12 @@ const handleGET: NextApiHandler = async (req, res) => {
     return;
   }
 
-  const network = networkDoc.data() as UserNetwork;
-  const followerUserIds = Object.keys(network.followers);
-  const followers = [];
-  for (const fuid of followerUserIds) {
-    const followerUserDoc = await db.collection("users").doc(fuid).get();
-
-    if (!followerUserDoc.exists) {
-      network.followers[fuid] = firestore.FieldValue.delete() as any;
-      continue;
-    }
-
-    followers.push((followerUserDoc.data() as User).username);
-  }
-  const followingUserIds = Object.keys(network.following);
-  const following = [];
-  for (const fuid of followingUserIds) {
-    const followingUserDoc = await db.collection("users").doc(fuid).get();
-
-    if (!followingUserDoc.exists) {
-      network.following[fuid] = firestore.FieldValue.delete() as any;
-      continue;
-    }
-
-    following.push((followingUserDoc.data() as User).username);
-  }
+  const userIdNetwork = networkDoc.data() as UserNetwork;
+  const usernameNetwork = await userIdNetworkToUsernameNetwork(userIdNetwork);
 
   res.status(200).json({
     ...userSnapshot.docs[0].data(),
-    network: { followers, following },
+    network: usernameNetwork,
   });
 };
 

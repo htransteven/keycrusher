@@ -1,3 +1,4 @@
+import { firestore } from "firebase-admin";
 import { NextApiHandler } from "next";
 import admin from "../../../../lib/firebase";
 
@@ -57,10 +58,10 @@ const handlePOST: NextApiHandler = async (req, res) => {
   try {
     await db.runTransaction(async (t) => {
       t.update(db.collection("network").doc(otherUserId), {
-        [`followers.${userId}`]: true,
+        [`followers.${userId}`]: firestore.FieldValue.delete(),
       });
       t.update(db.collection("network").doc(userId), {
-        [`following.${otherUserId}`]: true,
+        [`following.${otherUserId}`]: firestore.FieldValue.delete(),
       });
     });
   } catch (error) {

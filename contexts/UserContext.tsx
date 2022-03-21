@@ -1,14 +1,22 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  SetStateAction,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { User } from "../models/api/user";
 import { useFirebase } from "./FirebaseContext";
 
 interface UserContext {
   user: User | null;
+  setUser: (value: SetStateAction<User | null>) => void;
   loadingUser: boolean;
 }
 
 const UserContext = createContext<UserContext>({
   user: null,
+  setUser: () => {},
   loadingUser: false,
 });
 
@@ -52,7 +60,7 @@ export const UserProvider: React.FC = ({ children }) => {
   }, [firebaseUser, firestore, setFirebaseUser]);
 
   return (
-    <UserContext.Provider value={{ user, loadingUser }}>
+    <UserContext.Provider value={{ user, setUser, loadingUser }}>
       {children}
     </UserContext.Provider>
   );

@@ -1,6 +1,6 @@
 export interface UserNetwork {
-  followers: string[];
-  following: string[];
+  followers: { [username: string]: boolean };
+  following: { [username: string]: boolean };
 }
 
 export interface User {

@@ -1,5 +1,7 @@
 import { format } from "date-fns";
 import Head from "next/head";
+import Link from "next/link";
+import { useMemo } from "react";
 import styled, { useTheme } from "styled-components";
 import { Button } from "../components/form/Button";
 import { Loading } from "../components/Loading";
@@ -103,7 +105,7 @@ const AndMoreText = styled.p`
   justify-content: center;
 `;
 
-const UserIconContainer = styled.span<{ backgroundColor: string }>`
+const UserIconContainer = styled.a<{ backgroundColor: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,6 +113,7 @@ const UserIconContainer = styled.span<{ backgroundColor: string }>`
   border-radius: 50%;
   height: 35px;
   width: 35px;
+  color: ${({ theme }) => theme.primaryTextColor};
   background-color: ${({ backgroundColor }) => backgroundColor};
   font-size: 1rem;
 `;
@@ -118,25 +121,40 @@ const UserIconContainer = styled.span<{ backgroundColor: string }>`
 const UserIcon: React.FC<{ username: string }> = ({ username }) => {
   const theme = useTheme();
   return (
-    <UserIconContainer
-      backgroundColor={
-        theme.profile.userNetwork.userIcon.backgroundColors[
-          Math.floor(
-            theme.profile.userNetwork.userIcon.backgroundColors.length *
-              Math.random()
-          )
-        ]
-      }
-      title={username}
-    >
-      {username.charAt(0)}
-    </UserIconContainer>
+    <Link href={`/user/${username}`} passHref>
+      <UserIconContainer
+        backgroundColor={
+          theme.profile.userNetwork.userIcon.backgroundColors[
+            Math.floor(
+              theme.profile.userNetwork.userIcon.backgroundColors.length *
+                Math.random()
+            )
+          ]
+        }
+        title={username}
+      >
+        {username.charAt(0)}
+      </UserIconContainer>
+    </Link>
   );
 };
 
 const ProfilePage = () => {
   const { auth } = useFirebase();
   const { user, loadingUser } = useUser();
+
+  const followers = useMemo(() => {
+    if (!user) return [];
+    return Object.keys(user.network.followers).filter(
+      (username) => user.network.followers[username]
+    );
+  }, [user]);
+  const following = useMemo(() => {
+    if (!user) return [];
+    return Object.keys(user.network.following).filter(
+      (username) => user.network.following[username]
+    );
+  }, [user]);
 
   return (
     <>
@@ -166,32 +184,28 @@ const ProfilePage = () => {
             <UserNetworkContainer>
               <span>Followers</span>
               <UserNetworkSubContainer>
-                {user.network.followers.length === 0 && <p>None</p>}
-                {user.network.followers.map((username) => (
+                {followers.length === 0 && <p>None</p>}
+                {followers.map((username) => (
                   <UserIcon
                     key={`followers-user-${username}`}
                     username={username}
                   />
                 ))}
-                {user.network.followers.length > 5 && (
-                  <AndMoreText>
-                    and {user.network.followers.length - 5} more...
-                  </AndMoreText>
+                {followers.length > 5 && (
+                  <AndMoreText>and {followers.length - 5} more...</AndMoreText>
                 )}
               </UserNetworkSubContainer>
               <span>Following</span>
               <UserNetworkSubContainer>
-                {user.network.following.length === 0 && <p>None</p>}
-                {user.network.following.map((username) => (
+                {following.length === 0 && <p>None</p>}
+                {following.map((username) => (
                   <UserIcon
                     key={`following-user-${username}`}
                     username={username}
                   />
                 ))}
-                {user.network.following.length > 5 && (
-                  <AndMoreText>
-                    and {user.network.following.length - 5} more...
-                  </AndMoreText>
+                {following.length > 5 && (
+                  <AndMoreText>and {following.length - 5} more...</AndMoreText>
                 )}
               </UserNetworkSubContainer>
             </UserNetworkContainer>
