@@ -11,7 +11,7 @@ import {
   Label,
 } from "recharts";
 import styled, { useTheme } from "styled-components";
-import { LocalStorageDailyStats } from "../models/localStorage";
+import { DailyStats } from "../models/api/stats";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { toFixed } from "../utils/numbers";
 
@@ -163,10 +163,7 @@ interface SummaryArrayTransformed {
   endTime: number[];
 }
 
-export const DailyStats: React.FC<LocalStorageDailyStats> = ({
-  streak,
-  history,
-}) => {
+export const DailyStatsViewer: React.FC<DailyStats> = ({ streak, history }) => {
   const theme = useTheme();
   const averageCalculations: AverageCalculations = {
     sumWPM: 0,

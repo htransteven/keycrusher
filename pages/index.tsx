@@ -1,5 +1,3 @@
-import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
-import { doc, setDoc } from "firebase/firestore";
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useCallback, useState } from "react";
@@ -35,23 +33,18 @@ const HomePage: NextPage = () => {
       setChallengeSummary(summary);
 
       if (!firebaseUser) return;
-      const docId = formatInTimeZone(
-        utcToZonedTime(Date.now(), "America/Los_Angeles"),
-        "America/Los_Angeles",
-        "MM-dd-yyyy_hh:mm:ss:SSS_a"
-      );
 
-      try {
-        await setDoc(
-          doc(firestore, `stats/${firebaseUser.uid}/history`, `${docId}`),
-          summary
-        );
-      } catch (error) {
-        alert("failed to save challenge");
-        console.log(error);
+      const res = await fetch("/api/challenge", {
+        method: "POST",
+        headers: { authorization: `Bearer ${firebaseUser.uid}` },
+        body: JSON.stringify(summary),
+      });
+      if (!res.ok) {
+        console.log(await res.json());
+        alert("failed to upload challenge");
       }
     },
-    [firebaseUser, firestore]
+    [firebaseUser]
   );
 
   const onReset = useCallback(() => {

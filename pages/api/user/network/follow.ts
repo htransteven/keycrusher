@@ -2,7 +2,6 @@ import { NextApiHandler } from "next";
 import admin from "../../../../lib/firebase";
 
 interface POSTBody {
-  email?: string;
   username?: string;
 }
 
@@ -22,26 +21,18 @@ const handlePOST: NextApiHandler = async (req, res) => {
     return;
   }
 
-  const { email, username } = JSON.parse(req.body) as POSTBody;
-  if (!email && !username) {
+  const { username } = JSON.parse(req.body) as POSTBody;
+  if (!username) {
     res.status(400).json({
-      message: "An email or username is required in the body",
+      message: "An username is required in the body",
     });
     return;
   }
 
-  let userSnapshot;
-  if (email) {
-    userSnapshot = await db
-      .collection("users")
-      .where("email", "==", email)
-      .get();
-  } else {
-    userSnapshot = await db
-      .collection("users")
-      .where("username", "==", username)
-      .get();
-  }
+  const userSnapshot = await db
+    .collection("users")
+    .where("username", "==", username)
+    .get();
 
   if (userSnapshot.empty) {
     res.status(404).json({ code: 404, message: "User not found." });

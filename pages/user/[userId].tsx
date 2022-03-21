@@ -7,7 +7,6 @@ import styled, { useTheme } from "styled-components";
 import { Button } from "../../components/form/Button";
 import { Loading } from "../../components/Loading";
 import { Login } from "../../components/Login";
-import { UserHistory } from "../../components/UserHistory";
 import { useFirebase } from "../../contexts/FirebaseContext";
 import { useUser } from "../../contexts/UserContext";
 import { User } from "../../models/api/user";
@@ -197,7 +196,7 @@ const UserPage = () => {
     if (!user || !otherUser || !firebaseUser) return;
     const res = await fetch("/api/user/network/follow", {
       method: "POST",
-      headers: { authorization: `Bearer ${firebaseUser?.uid}` },
+      headers: { authorization: `Bearer ${firebaseUser.uid}` },
       body: JSON.stringify({ email: otherUser.email }),
     });
     const data = await res.json();
@@ -240,7 +239,7 @@ const UserPage = () => {
     if (!user || !otherUser || !firebaseUser) return;
     const res = await fetch("/api/user/network/unfollow", {
       method: "POST",
-      headers: { authorization: `Bearer ${firebaseUser?.uid}` },
+      headers: { authorization: `Bearer ${firebaseUser.uid}` },
       body: JSON.stringify({ email: otherUser.email }),
     });
     const data = await res.json();
