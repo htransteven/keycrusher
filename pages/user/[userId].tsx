@@ -350,9 +350,7 @@ const UserPage = () => {
               </UserNetworkSubContainer>
             </UserNetworkContainer>
           </LeftContainer>
-          <RightContainer>
-            <UserHistory />
-          </RightContainer>
+          <RightContainer></RightContainer>
         </Container>
       )}
     </>
