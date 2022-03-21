@@ -7,7 +7,7 @@ import {
   where,
 } from "firebase/firestore";
 import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "../models/User";
+import { User } from "../models/firestore/User";
 import { useFirebase } from "./FirebaseContext";
 
 interface UserContext {

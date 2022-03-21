@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { ChallengeSummary as ChallengeSummaryProps } from "../models/ChallengeSummary";
+import { ChallengeSummary as ChallengeSummaryProps } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { toFixed } from "../utils/numbers";
 

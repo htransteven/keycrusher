@@ -20,7 +20,7 @@ import { TextInput } from "./form/TextInput";
 import { Button } from "./form/Button";
 import { FormEventHandler, useCallback, useState } from "react";
 import GoogleIcon from "../assets/google-brands.svg";
-import { User } from "../models/User";
+import { User } from "../models/firestore/User";
 import { Loading } from "./Loading";
 
 const Container = styled.div`

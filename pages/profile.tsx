@@ -8,7 +8,7 @@ import { Login } from "../components/Login";
 import { UserHistory } from "../components/UserHistory";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { useUser } from "../contexts/UserContext";
-import { APIResponse_User_Network } from "../models/network";
+import { APIResponse_User_Network } from "../models/api/network";
 import { BREAKPOINTS } from "../styles/breakpoints";
 
 const Container = styled.div`

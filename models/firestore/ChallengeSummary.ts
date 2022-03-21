@@ -1,4 +1,4 @@
-import { Telemetry } from "./Telemetry";
+import { Telemetry } from "../Telemetry";
 
 export type ChallengeMode = "default" | "daily";
 

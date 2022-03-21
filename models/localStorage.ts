@@ -1,4 +1,4 @@
-import { ChallengeSummary } from "./ChallengeSummary";
+import { ChallengeSummary } from "./firestore/ChallengeSummary";
 
 export interface LocalStorageDailyStats {
   streak: number;

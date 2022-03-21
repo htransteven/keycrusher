@@ -1,6 +1,6 @@
 import { NextApiHandler } from "next";
 import admin from "../../../../lib/firebase";
-import { User } from "../../../../models/User";
+import { User } from "../../../../models/firestore/User";
 
 interface POSTBody {
   email?: string;

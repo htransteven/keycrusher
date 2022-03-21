@@ -8,8 +8,8 @@ import { Loading } from "../../components/Loading";
 import { Login } from "../../components/Login";
 import { UserHistory } from "../../components/UserHistory";
 import { useFirebase } from "../../contexts/FirebaseContext";
-import { APIResponse_User_Network } from "../../models/network";
-import { User } from "../../models/User";
+import { APIResponse_User_Network } from "../../models/api/network";
+import { User } from "../../models/firestore/User";
 import { BREAKPOINTS } from "../../styles/breakpoints";
 
 const Container = styled.div`

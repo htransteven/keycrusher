@@ -3,7 +3,7 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useFirebase } from "../contexts/FirebaseContext";
-import { ChallengeSummary } from "../models/ChallengeSummary";
+import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { Loading } from "./Loading";
 

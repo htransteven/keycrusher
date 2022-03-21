@@ -1,8 +1,8 @@
 import { firestore } from "firebase-admin";
 import { NextApiHandler } from "next";
 import admin from "../../../../lib/firebase";
-import { UserNetwork } from "../../../../models/network";
-import { User } from "../../../../models/User";
+import { UserNetwork } from "../../../../models/firestore/Network";
+import { User } from "../../../../models/firestore/User";
 
 interface GETQuery {
   username?: string;

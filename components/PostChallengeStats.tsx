@@ -13,7 +13,7 @@ import {
   Label,
 } from "recharts";
 import styled, { useTheme } from "styled-components";
-import { ChallengeSummary as ChallengeSummaryProps } from "../models/ChallengeSummary";
+import { ChallengeSummary as ChallengeSummaryProps } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { ChallengeSummary } from "./ChallengeSummary";
 import HelpIcon from "../assets/circle-question-solid.svg";

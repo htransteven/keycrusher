@@ -1,5 +1,8 @@
+import { firestore } from "firebase-admin";
 import { NextApiHandler } from "next";
 import admin from "../../../lib/firebase";
+import { UserNetwork } from "../../../models/firestore/Network";
+import { User } from "../../../models/firestore/User";
 
 interface GETQuery {
   email?: string;
@@ -36,7 +39,48 @@ const handleGET: NextApiHandler = async (req, res) => {
     res.status(500).json({ message: "More than one user was found." });
   }
 
-  res.status(200).json(userSnapshot.docs[0].data());
+  const userId = userSnapshot.docs[0].id;
+  const networkDoc = await db.collection("network").doc(userId).get();
+  if (!networkDoc.exists) {
+    // lazy create network doc if needed
+    await db
+      .collection("network")
+      .doc(userId)
+      .create({ followers: {}, following: {} });
+    res.status(200).json({ followers: [], following: [] });
+    return;
+  }
+
+  const network = networkDoc.data() as UserNetwork;
+  const followerUserIds = Object.keys(network.followers);
+  const followers = [];
+  for (const fuid of followerUserIds) {
+    const followerUserDoc = await db.collection("users").doc(fuid).get();
+
+    if (!followerUserDoc.exists) {
+      network.followers[fuid] = firestore.FieldValue.delete() as any;
+      continue;
+    }
+
+    followers.push((followerUserDoc.data() as User).username);
+  }
+  const followingUserIds = Object.keys(network.following);
+  const following = [];
+  for (const fuid of followingUserIds) {
+    const followingUserDoc = await db.collection("users").doc(fuid).get();
+
+    if (!followingUserDoc.exists) {
+      network.following[fuid] = firestore.FieldValue.delete() as any;
+      continue;
+    }
+
+    following.push((followingUserDoc.data() as User).username);
+  }
+
+  res.status(200).json({
+    ...userSnapshot.docs[0].data(),
+    network: { followers, following },
+  });
 };
 
 const handler: NextApiHandler = async (req, res) => {

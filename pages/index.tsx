@@ -7,7 +7,7 @@ import styled from "styled-components";
 import { PostChallengeStats } from "../components/PostChallengeStats";
 import { Teleprompter } from "../components/Teleprompter";
 import { useFirebase } from "../contexts/FirebaseContext";
-import { ChallengeSummary } from "../models/ChallengeSummary";
+import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
 
 const Container = styled.div``;
 

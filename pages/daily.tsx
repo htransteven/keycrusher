@@ -15,8 +15,8 @@ import { DailyStats } from "../components/DailyStats";
 import { PostChallengeStats } from "../components/PostChallengeStats";
 import { Teleprompter } from "../components/Teleprompter";
 import { useFirebase } from "../contexts/FirebaseContext";
-import { ChallengeSummary } from "../models/ChallengeSummary";
-import { DailyChallenge } from "../models/DailyChallenge";
+import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
+import { DailyChallenge } from "../models/firestore/DailyChallenge";
 import { LocalStorageDailyStats } from "../models/localStorage";
 
 const Container = styled.div``;

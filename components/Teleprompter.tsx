@@ -15,7 +15,7 @@ import {
   ChallengeMode,
   ChallengeSummary,
   ChallengeTimeData,
-} from "../models/ChallengeSummary";
+} from "../models/firestore/ChallengeSummary";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { KeyCap } from "./Keycap";
