@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import Head from "next/head";
-import { useEffect, useState } from "react";
 import styled, { useTheme } from "styled-components";
 import { Button } from "../components/form/Button";
 import { Loading } from "../components/Loading";
@@ -8,7 +7,6 @@ import { Login } from "../components/Login";
 import { UserHistory } from "../components/UserHistory";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { useUser } from "../contexts/UserContext";
-import { APIResponse_User_Network } from "../models/api/network";
 import { BREAKPOINTS } from "../styles/breakpoints";
 
 const Container = styled.div`
@@ -139,30 +137,6 @@ const UserIcon: React.FC<{ username: string }> = ({ username }) => {
 const ProfilePage = () => {
   const { auth } = useFirebase();
   const { user, loadingUser } = useUser();
-  const [followers, setFollowers] = useState<string[] | null>(null);
-  const [following, setFollowing] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    const loadFollowersAndFollowing = async () => {
-      if (!user) return;
-      try {
-        const query = new URLSearchParams();
-        query.append("username", user.username);
-        const res = await fetch(`/api/user/network?${query.toString()}`);
-        if (!res.ok) {
-          console.log(await res.json());
-        }
-
-        const data = (await res.json()) as APIResponse_User_Network;
-        setFollowers(data.followers);
-        setFollowing(data.following);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    loadFollowersAndFollowing();
-  }, [user]);
 
   return (
     <>
@@ -192,30 +166,32 @@ const ProfilePage = () => {
             <UserNetworkContainer>
               <span>Followers</span>
               <UserNetworkSubContainer>
-                {!followers && <p>Loading...</p>}
-                {followers?.length === 0 && <p>None</p>}
-                {followers?.map((username) => (
+                {user.network.followers.length === 0 && <p>None</p>}
+                {user.network.followers.map((username) => (
                   <UserIcon
                     key={`followers-user-${username}`}
                     username={username}
                   />
                 ))}
-                {followers && followers.length > 5 && (
-                  <AndMoreText>and {followers.length - 5} more...</AndMoreText>
+                {user.network.followers.length > 5 && (
+                  <AndMoreText>
+                    and {user.network.followers.length - 5} more...
+                  </AndMoreText>
                 )}
               </UserNetworkSubContainer>
               <span>Following</span>
               <UserNetworkSubContainer>
-                {!following && <p>Loading...</p>}
-                {following?.length === 0 && <p>None</p>}
-                {following?.map((username) => (
+                {user.network.following.length === 0 && <p>None</p>}
+                {user.network.following.map((username) => (
                   <UserIcon
                     key={`following-user-${username}`}
                     username={username}
                   />
                 ))}
-                {following && following.length > 5 && (
-                  <AndMoreText>and {following.length - 5} more...</AndMoreText>
+                {user.network.following.length > 5 && (
+                  <AndMoreText>
+                    and {user.network.following.length - 5} more...
+                  </AndMoreText>
                 )}
               </UserNetworkSubContainer>
             </UserNetworkContainer>

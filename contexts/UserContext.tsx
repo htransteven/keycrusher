@@ -1,13 +1,5 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
 import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "../models/firestore/User";
+import { User } from "../models/api/user";
 import { useFirebase } from "./FirebaseContext";
 
 interface UserContext {
@@ -40,13 +32,15 @@ export const UserProvider: React.FC = ({ children }) => {
 
       setLoadingUser(true);
       try {
-        const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
-        if (!userDoc.exists()) {
-          setFirebaseUser(null);
-          throw new Error("no user found");
-        }
+        const query = new URLSearchParams();
+        query.append("email", `${firebaseUser.email}`);
 
-        setUser(userDoc.data() as User);
+        const res = await fetch(`/api/user?${query.toString()}`);
+        if (!res.ok) {
+          alert("failed to get user");
+          console.log(await res.json());
+        }
+        setUser((await res.json()) as User);
       } catch (error: any) {
         console.log(error);
       } finally {
