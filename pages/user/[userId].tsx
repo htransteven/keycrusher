@@ -197,7 +197,7 @@ const UserPage = () => {
     const res = await fetch("/api/user/network/follow", {
       method: "POST",
       headers: { authorization: `Bearer ${firebaseUser.uid}` },
-      body: JSON.stringify({ email: otherUser.email }),
+      body: JSON.stringify({ username: otherUser.username }),
     });
     const data = await res.json();
     if (!res.ok) {
