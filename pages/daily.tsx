@@ -5,9 +5,11 @@ import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import { DailyStatsViewer } from "../components/DailyStatsViewer";
+import { Loading } from "../components/Loading";
 import { PostChallengeStats } from "../components/PostChallengeStats";
 import { Teleprompter } from "../components/Teleprompter";
 import { useFirebase } from "../contexts/FirebaseContext";
+import { useUser } from "../contexts/UserContext";
 import { DailyStats } from "../models/api/stats";
 import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../models/firestore/DailyChallenge";
@@ -19,16 +21,17 @@ const LOCALSTORAGE_DAILY_STATS_KEY = "KC_DS";
 
 const HomePage: NextPage = () => {
   const { firebaseUser } = useFirebase();
-  const [loading, setLoading] = useState(true);
+  const { loadingUser } = useUser();
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [currentZonedTime, setCurrentZonedTime] = useState(Date.now());
-  const [hasAttempted, setHasAttempted] = useState(false);
+  const [hasAttempted, setHasAttempted] = useState<boolean | null>(null);
   const [challengeSummary, setChallengeSummary] =
     useState<ChallengeSummary | null>(null);
 
   // load daily stats either from firebase or local storage
   useEffect(() => {
     const loadDailyStats = async () => {
+      if (loadingUser) return;
       if (firebaseUser) {
         const res = await fetch("/api/user/stats", {
           headers: { authorization: `Bearer ${firebaseUser.uid}` },
@@ -37,8 +40,8 @@ const HomePage: NextPage = () => {
           console.log(await res.json());
           alert("failed to load daily stats");
         }
-
-        setDailyStats((await res.json()) as DailyStats);
+        const data = (await res.json()) as DailyStats;
+        setDailyStats(data);
       } else {
         const dailyStatsString = localStorage.getItem(
           LOCALSTORAGE_DAILY_STATS_KEY
@@ -61,12 +64,12 @@ const HomePage: NextPage = () => {
       }
     };
     loadDailyStats();
-  }, [firebaseUser]);
+  }, [firebaseUser, loadingUser]);
 
   useEffect(() => {
     const checkForDailyChallengeAttempt = async () => {
       // wait for local storage load
-      if (!dailyStats || !loading) return;
+      if (!dailyStats) return;
 
       // today's daily challenge doc id
       const today = utcToZonedTime(Date.now(), "America/Los_Angeles");
@@ -81,12 +84,10 @@ const HomePage: NextPage = () => {
       } else {
         setHasAttempted(false);
       }
-
-      setLoading(false);
     };
 
     checkForDailyChallengeAttempt();
-  }, [dailyStats, loading]);
+  }, [dailyStats]);
 
   useEffect(() => {
     if (!hasAttempted) return;
@@ -146,6 +147,7 @@ const HomePage: NextPage = () => {
           alert("failed to get new stats");
         }
         setDailyStats((await statsRes.json()) as DailyStats);
+        setHasAttempted(true);
         return;
       }
 
@@ -214,7 +216,10 @@ const HomePage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Container>
-        {!loading && (
+        {(loadingUser || hasAttempted === null) && (
+          <Loading value="DAILY CHALLENGE" />
+        )}
+        {!loadingUser && hasAttempted !== null && (
           <Teleprompter
             mode={"daily"}
             coverText={

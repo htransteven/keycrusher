@@ -1,7 +1,7 @@
 export interface DailyChallenge {
   text: string;
-  averageTime: number;
-  averageWPM: number;
-  averageAccuracy: number;
+  sumTime: number;
+  sumWPM: number;
+  sumAccuracy: number;
   attempts: number;
 }

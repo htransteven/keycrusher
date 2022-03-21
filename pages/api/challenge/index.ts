@@ -3,7 +3,9 @@ import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
 import { NextApiHandler } from "next";
 import admin from "../../../lib/firebase";
 import { ChallengeSummary } from "../../../models/firestore/ChallengeSummary";
-import { DailyStats, Stats } from "../../../models/firestore/stats";
+import { DailyChallenge } from "../../../models/firestore/DailyChallenge";
+import { Stats } from "../../../models/firestore/stats";
+import { challengeSummaryToDailyChallengeSummary } from "../../../utils/api/challengeSummaryToDailyChallengeSummary";
 
 interface GETQuery {
   username?: string;
@@ -116,11 +118,23 @@ const handlePOST: NextApiHandler = async (req, res) => {
       .doc(dateFormatted)
       .get();
     if (existingAttempt.exists) {
-      res.status(304).json({
-        message: `You have already attempted the daily challenge for ${dateFormatted}`,
-      });
+      res.status(304).end();
       return;
     }
+
+    const dailyChallenge = (
+      await db.collection("daily").doc(dateFormatted).get()
+    ).data() as DailyChallenge;
+
+    const dailyChallengeSummary =
+      challengeSummaryToDailyChallengeSummary(summary);
+
+    dailyChallenge.attempts += 1;
+    dailyChallenge.sumAccuracy += dailyChallengeSummary.accuracy;
+    dailyChallenge.sumTime += dailyChallengeSummary.challengeDuration;
+    dailyChallenge.sumWPM += dailyChallengeSummary.wpm;
+
+    await db.collection("daily").doc(dateFormatted).set(dailyChallenge);
 
     // update daily stats with new daily challenge
     const stats = (

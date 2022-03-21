@@ -45,15 +45,15 @@ export const scheduledFunctionCrontab = functions.pubsub
 
       const newDailyChallenge: {
         text: string;
-        averageTime: number;
-        averageWPM: number;
-        averageAccuracy: number;
+        sumTime: number;
+        sumWPM: number;
+        sumAccuracy: number;
         attempts: number;
       } = {
         text: result.join(" "),
-        averageTime: 0,
-        averageWPM: 0,
-        averageAccuracy: 0,
+        sumTime: 0,
+        sumWPM: 0,
+        sumAccuracy: 0,
         attempts: 0,
       };
 

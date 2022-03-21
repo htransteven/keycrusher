@@ -27,18 +27,18 @@ export const useUser = () => {
 export const UserProvider: React.FC = ({ children }) => {
   const { firestore, firebaseUser, setFirebaseUser } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       if (!firebaseUser) {
         setUser(null);
+        setLoadingUser(false);
         return;
       }
 
       if (!firestore) return;
 
-      setLoadingUser(true);
       try {
         const query = new URLSearchParams();
         query.append("email", `${firebaseUser.email}`);
