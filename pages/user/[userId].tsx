@@ -297,7 +297,6 @@ const UserPage = () => {
           <LeftContainer>
             <Keycard>
               <KeycardData label="Username" value={otherUser.username} />
-              <KeycardData label="Email" value={otherUser.email} />
               <KeycardData
                 label="Member Since"
                 value={format(otherUser.created, "MMM d, yyyy")}
