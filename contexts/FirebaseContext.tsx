@@ -19,6 +19,7 @@ interface FirebaseContext {
   auth: Auth;
   analytics: Analytics;
   firestore: Firestore;
+  loadingFirebaseUser: boolean;
   firebaseUser: FirebaseUser | null;
   setFirebaseUser: (firebaseUser: FirebaseUser | null) => void;
 }
@@ -37,6 +38,7 @@ export const FirebaseProvider: React.FC = ({ children }) => {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [firestore, setFirestore] = useState<Firestore | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [loadingFirebaseUser, setLoadingFirebaseUser] = useState(true);
 
   // have to fetch in a useEffect because window doesn't exist to use in initial state
   useEffect(() => {
@@ -51,15 +53,27 @@ export const FirebaseProvider: React.FC = ({ children }) => {
       if (newFirebaseUser?.uid !== firebaseUser?.uid) {
         setFirebaseUser(newFirebaseUser);
       }
+      if (loadingFirebaseUser) {
+        setLoadingFirebaseUser(false);
+      }
     });
+
     return subscriber;
-  }, [auth, firebaseUser?.uid]);
+  }, [auth, firebaseUser?.uid, loadingFirebaseUser]);
 
   if (!analytics || !auth || !firestore) return null;
 
   return (
     <FirebaseContext.Provider
-      value={{ app, auth, analytics, firestore, firebaseUser, setFirebaseUser }}
+      value={{
+        app,
+        auth,
+        analytics,
+        firestore,
+        loadingFirebaseUser,
+        firebaseUser,
+        setFirebaseUser,
+      }}
     >
       {children}
     </FirebaseContext.Provider>

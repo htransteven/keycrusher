@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { toFixed } from "../utils/numbers";
 import { Loading } from "./Loading";
 
 const Container = styled.div`
@@ -117,7 +118,7 @@ export const UserHistory = () => {
                   summary.time.unix.endTime,
                   "MMM d, yyyy hh:mm:ss a"
                 )}
-                value={`${summary.wpm} WPM`}
+                value={`${toFixed(summary.wpm, 2)} WPM`}
               />
             </HistoryEntryLeft>
             <HistoryEntryRight>

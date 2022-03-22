@@ -25,6 +25,19 @@ export const DARK_THEME = {
   greenAccent: COLOR_PALLETE.correct,
   blueAccent: COLOR_PALLETE.baseBlue,
   redAccent: COLOR_PALLETE.error,
+  generic: {
+    container: {
+      backgroundColor: COLOR_PALLETE.midGrey,
+    },
+    grid: {
+      borderColor: COLOR_PALLETE.lightGrey,
+      row: {
+        hover: {
+          backgroundColor: COLOR_PALLETE.lightGrey,
+        },
+      },
+    },
+  },
   navbar: {
     primaryTextColor: COLOR_PALLETE.white,
     accentColor: COLOR_PALLETE.correct,

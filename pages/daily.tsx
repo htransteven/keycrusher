@@ -4,13 +4,13 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
+import { GlobalStatsComparison } from "../components/daily/GlobalStatsComparison";
 import { DailyStatsViewer } from "../components/DailyStatsViewer";
 import { Loading } from "../components/Loading";
 import { PostChallengeStats } from "../components/PostChallengeStats";
 import { Teleprompter } from "../components/Teleprompter";
 import { useFirebase } from "../contexts/FirebaseContext";
-import { useUser } from "../contexts/UserContext";
-import { DailyStats } from "../models/api/stats";
+import { DailyStats, DailyStatsChallengeSummary } from "../models/api/stats";
 import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../models/firestore/DailyChallenge";
 import { challengeSummaryToDailyChallengeSummary } from "../utils/api/challengeSummaryToDailyChallengeSummary";
@@ -20,18 +20,22 @@ const Container = styled.div``;
 const LOCALSTORAGE_DAILY_STATS_KEY = "KC_DS";
 
 const HomePage: NextPage = () => {
-  const { firebaseUser } = useFirebase();
-  const { loadingUser } = useUser();
+  const { loadingFirebaseUser, firebaseUser } = useFirebase();
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [currentZonedTime, setCurrentZonedTime] = useState(Date.now());
   const [hasAttempted, setHasAttempted] = useState<boolean | null>(null);
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(
+    null
+  );
+  const [daillyChallengeSummary, setDailyChallengeSummary] =
+    useState<DailyStatsChallengeSummary | null>(null);
   const [challengeSummary, setChallengeSummary] =
     useState<ChallengeSummary | null>(null);
 
   // load daily stats either from firebase or local storage
   useEffect(() => {
     const loadDailyStats = async () => {
-      if (loadingUser || hasAttempted) return;
+      if (loadingFirebaseUser) return;
 
       if (firebaseUser) {
         const res = await fetch("/api/user/stats", {
@@ -65,7 +69,7 @@ const HomePage: NextPage = () => {
       }
     };
     loadDailyStats();
-  }, [firebaseUser, hasAttempted, loadingUser]);
+  }, [firebaseUser, hasAttempted, loadingFirebaseUser]);
 
   useEffect(() => {
     const checkForDailyChallengeAttempt = async () => {
@@ -81,6 +85,7 @@ const HomePage: NextPage = () => {
       );
 
       if (dailyStats.history[todayFormatted]) {
+        setDailyChallengeSummary(dailyStats.history[todayFormatted]);
         setHasAttempted(true);
       } else {
         setHasAttempted(false);
@@ -111,6 +116,7 @@ const HomePage: NextPage = () => {
 
       // randomize order
       const dailyChallange = (await res.json()) as DailyChallenge;
+      setDailyChallenge(dailyChallange);
       const newWords = dailyChallange.text.split(" ");
       for (let i = newWords.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -128,6 +134,9 @@ const HomePage: NextPage = () => {
       if (hasAttempted) return;
       setHasAttempted(true);
       setChallengeSummary(summary);
+      setDailyChallengeSummary(
+        challengeSummaryToDailyChallengeSummary(summary)
+      );
 
       /** Daily Stats: Firestore Version */
       const challengeRes = await fetch("/api/challenge/daily", {
@@ -218,10 +227,10 @@ const HomePage: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Container>
-        {(loadingUser || hasAttempted === null) && (
+        {(loadingFirebaseUser || hasAttempted === null) && (
           <Loading value="DAILY CHALLENGE" />
         )}
-        {!loadingUser && hasAttempted !== null && (
+        {!loadingFirebaseUser && hasAttempted !== null && (
           <Teleprompter
             mode={"daily"}
             coverText={
@@ -247,6 +256,12 @@ const HomePage: NextPage = () => {
             onComplete={onComplete}
             onReset={() => {}}
             disabled={hasAttempted}
+          />
+        )}
+        {dailyChallenge && daillyChallengeSummary && (
+          <GlobalStatsComparison
+            dailyChallenge={dailyChallenge}
+            summary={daillyChallengeSummary}
           />
         )}
         {challengeSummary && <PostChallengeStats {...challengeSummary} />}

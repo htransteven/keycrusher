@@ -18,6 +18,7 @@ import {
 } from "../models/firestore/ChallengeSummary";
 import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
+import { toFixed } from "../utils/numbers";
 import { KeyCap } from "./Keycap";
 
 const WORD_GAP = "0.35rem";
@@ -360,11 +361,10 @@ const reducer = (
     case TEXT_PROMPT_ACTIONS.UPDATE_WPM:
       return {
         ...state,
-        wpm: Math.round(
+        wpm:
           state.telemetry.numCorrect /
-            5 /
-            ((Date.now() - state.time.unix.startTime) / 1000 / 60) //convert milliseconds to minute
-        ),
+          5 /
+          ((Date.now() - state.time.unix.startTime) / 1000 / 60), //convert milliseconds to minute
       };
     case TEXT_PROMPT_ACTIONS.MOVE_CARET:
       return { ...state, currentCharIndex: action.payload.selectionIndex };
@@ -946,9 +946,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
         {state.active && (
           <>
             <TelepromptStatusData>
-              {state.wpm < 100 ? "0" : ""}
-              {state.wpm < 10 ? "0" : ""}
-              {isFinite(state.wpm) ? state.wpm : "0"} WPM
+              {isFinite(state.wpm) ? toFixed(state.wpm, 2) : "0"} WPM
             </TelepromptStatusData>
             {state.mode === "default" && (
               <TelepromptStatusData>

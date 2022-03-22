@@ -242,7 +242,7 @@ export const DailyStatsViewer: React.FC<DailyStats> = ({ streak, history }) => {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={data.wpm.map((wpm, index) => ({
-                  wpm,
+                  wpm: toFixed(wpm, 2),
                   day: formatInTimeZone(
                     utcToZonedTime(data.endTime[index], "America/Los_Angeles"),
                     "America/Los_Angeles",
