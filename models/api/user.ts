@@ -1,7 +1,4 @@
-export interface UserNetwork {
-  followers: { [username: string]: boolean };
-  following: { [username: string]: boolean };
-}
+import { UserNetwork } from "../firestore/Network";
 
 export interface User {
   username: string;

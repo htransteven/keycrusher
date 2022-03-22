@@ -31,7 +31,8 @@ const HomePage: NextPage = () => {
   // load daily stats either from firebase or local storage
   useEffect(() => {
     const loadDailyStats = async () => {
-      if (loadingUser) return;
+      if (loadingUser || hasAttempted) return;
+
       if (firebaseUser) {
         const res = await fetch("/api/user/stats", {
           headers: { authorization: `Bearer ${firebaseUser.uid}` },
@@ -64,12 +65,12 @@ const HomePage: NextPage = () => {
       }
     };
     loadDailyStats();
-  }, [firebaseUser, loadingUser]);
+  }, [firebaseUser, hasAttempted, loadingUser]);
 
   useEffect(() => {
     const checkForDailyChallengeAttempt = async () => {
       // wait for local storage load
-      if (!dailyStats) return;
+      if (!dailyStats || hasAttempted) return;
 
       // today's daily challenge doc id
       const today = utcToZonedTime(Date.now(), "America/Los_Angeles");
@@ -87,7 +88,7 @@ const HomePage: NextPage = () => {
     };
 
     checkForDailyChallengeAttempt();
-  }, [dailyStats]);
+  }, [dailyStats, hasAttempted]);
 
   useEffect(() => {
     if (!hasAttempted) return;
@@ -124,21 +125,24 @@ const HomePage: NextPage = () => {
 
   const onComplete = useCallback(
     async (summary: ChallengeSummary) => {
+      if (hasAttempted) return;
+      setHasAttempted(true);
       setChallengeSummary(summary);
 
       /** Daily Stats: Firestore Version */
-
+      const challengeRes = await fetch("/api/challenge/daily", {
+        method: "POST",
+        headers: firebaseUser
+          ? { authorization: `Bearer ${firebaseUser.uid}` }
+          : undefined,
+        body: JSON.stringify(summary),
+      });
+      if (challengeRes.status === 304) return;
+      if (!challengeRes.ok) {
+        console.log(await challengeRes.json());
+        alert("failed to upload challenge");
+      }
       if (firebaseUser) {
-        const challengeRes = await fetch("/api/challenge", {
-          method: "POST",
-          headers: { authorization: `Bearer ${firebaseUser.uid}` },
-          body: JSON.stringify(summary),
-        });
-        if (challengeRes.status === 304) return;
-        if (!challengeRes.ok) {
-          console.log(await challengeRes.json());
-          alert("failed to upload challenge");
-        }
         const statsRes = await fetch("/api/user/stats", {
           headers: { authorization: `Bearer ${firebaseUser.uid}` },
         });
@@ -147,7 +151,6 @@ const HomePage: NextPage = () => {
           alert("failed to get new stats");
         }
         setDailyStats((await statsRes.json()) as DailyStats);
-        setHasAttempted(true);
         return;
       }
 
@@ -200,9 +203,8 @@ const HomePage: NextPage = () => {
         JSON.stringify(newStats)
       );
       setDailyStats(newStats);
-      setHasAttempted(true);
     },
-    [dailyStats, firebaseUser]
+    [dailyStats, firebaseUser, hasAttempted]
   );
 
   return (
@@ -242,7 +244,7 @@ const HomePage: NextPage = () => {
                 : "Ready for the daily challenge?"
             }
             onMoreWords={getDailyChallengeWords}
-            onComplete={hasAttempted ? () => {} : onComplete}
+            onComplete={onComplete}
             onReset={() => {}}
             disabled={hasAttempted}
           />

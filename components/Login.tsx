@@ -22,6 +22,8 @@ import { FormEventHandler, useCallback, useState } from "react";
 import GoogleIcon from "../assets/google-brands.svg";
 import { User } from "../models/firestore/User";
 import { Loading } from "./Loading";
+import { Stats } from "../models/firestore/stats";
+import { UserNetwork } from "../models/firestore/Network";
 
 const Container = styled.div`
   display: flex;
@@ -262,18 +264,37 @@ export const Login = () => {
         password
       );
 
-      // create user
+      // create user doc
       const now = Date.now();
-      await setDoc(doc(firestore, "users", userCreds.user.uid), {
+      const newUserPayload: User = {
         username,
         email,
         lastLoggedIn: now,
         created: now,
-      });
-      await setDoc(doc(firestore, "network", userCreds.user.uid), {
-        followers: [],
-        following: [],
-      });
+      };
+      await setDoc(doc(firestore, "users", userCreds.user.uid), newUserPayload);
+      const newNetworkPayload: UserNetwork = {
+        followers: {},
+        following: {},
+      };
+
+      // create user network doc
+      await setDoc(
+        doc(firestore, "network", userCreds.user.uid),
+        newNetworkPayload
+      );
+      const newStatsPayload: Stats = {
+        daily: {
+          streak: 0,
+          historyIds: [],
+        },
+      };
+
+      // create user stats doc
+      await setDoc(
+        doc(firestore, "stats", userCreds.user.uid),
+        newStatsPayload
+      );
       setFirebaseUser(userCreds.user);
     } catch (error: any) {
       var errorCode = error.code;

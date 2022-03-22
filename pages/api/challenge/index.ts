@@ -95,6 +95,12 @@ const handlePOST: NextApiHandler = async (req, res) => {
     return;
   }
 
+  const summary = JSON.parse(req.body) as POSTBody;
+  if (summary.mode !== "default") {
+    res.status(400).json({ message: "Not a default challenge attempt" });
+    return;
+  }
+
   const userId = authHeader.split(" ")[1];
   const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) {
@@ -102,63 +108,12 @@ const handlePOST: NextApiHandler = async (req, res) => {
     return;
   }
 
-  const summary = JSON.parse(req.body) as POSTBody;
-
   const date = utcToZonedTime(summary.time.unix.endTime, "America/Los_Angeles");
   const dateFormatted = formatInTimeZone(
     date,
     "America/Los_Angeles",
-    summary.mode === "daily" ? "MM-dd-yyyy" : "MM-dd-yyyy_hh:mm:ss:SSS_a"
+    "MM-dd-yyyy_hh:mm:ss:SSS_a"
   );
-
-  // if mode is daily, check for previous attempts
-  if (summary.mode === "daily") {
-    const existingAttempt = await db
-      .collection(`stats/${userId}/history`)
-      .doc(dateFormatted)
-      .get();
-    if (existingAttempt.exists) {
-      res.status(304).end();
-      return;
-    }
-
-    const dailyChallenge = (
-      await db.collection("daily").doc(dateFormatted).get()
-    ).data() as DailyChallenge;
-
-    const dailyChallengeSummary =
-      challengeSummaryToDailyChallengeSummary(summary);
-
-    dailyChallenge.attempts += 1;
-    dailyChallenge.sumAccuracy += dailyChallengeSummary.accuracy;
-    dailyChallenge.sumTime += dailyChallengeSummary.challengeDuration;
-    dailyChallenge.sumWPM += dailyChallengeSummary.wpm;
-
-    await db.collection("daily").doc(dateFormatted).set(dailyChallenge);
-
-    // update daily stats with new daily challenge
-    const stats = (
-      await db.collection("stats").doc(userId).get()
-    ).data() as Stats;
-    const dailyStats = stats.daily;
-    dailyStats.historyIds.push(dateFormatted);
-
-    const dayBeforeFormatted = formatInTimeZone(
-      subDays(
-        utcToZonedTime(summary.time.unix.endTime, "America/Los_Angeles"),
-        1
-      ),
-      "America/Los_Angeles",
-      "MM-dd-yyyy"
-    );
-
-    if (dailyStats.historyIds.includes(dayBeforeFormatted)) {
-      dailyStats.streak = dailyStats.streak + 1;
-    } else {
-      dailyStats.streak = 1;
-    }
-    await db.collection("stats").doc(userId).set(stats);
-  }
 
   try {
     await db
