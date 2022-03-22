@@ -27,7 +27,7 @@ const HomePage: NextPage = () => {
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(
     null
   );
-  const [daillyChallengeSummary, setDailyChallengeSummary] =
+  const [dailyChallengeSummary, setDailyChallengeSummary] =
     useState<DailyStatsChallengeSummary | null>(null);
   const [challengeSummary, setChallengeSummary] =
     useState<ChallengeSummary | null>(null);
@@ -258,10 +258,10 @@ const HomePage: NextPage = () => {
             disabled={hasAttempted}
           />
         )}
-        {dailyChallenge && daillyChallengeSummary && (
+        {dailyChallenge && dailyChallengeSummary && (
           <GlobalStatsComparison
             dailyChallenge={dailyChallenge}
-            summary={daillyChallengeSummary}
+            summary={dailyChallengeSummary}
           />
         )}
         {challengeSummary && <PostChallengeStats {...challengeSummary} />}
