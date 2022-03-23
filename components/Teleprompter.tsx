@@ -460,9 +460,9 @@ const reducer = (
                 ...state.telemetry.history,
                 [state.currentWordIndex]: {
                   ...state.telemetry.history[state.currentWordIndex],
-                  [state.currentCharIndex]: {
+                  [action.payload.selectionIndex]: {
                     ...state.telemetry.history[state.currentWordIndex][
-                      state.currentCharIndex
+                      action.payload.selectionIndex
                     ],
                     correct: false,
                     rtt: 0,
@@ -717,17 +717,12 @@ export const Teleprompter: React.FC<Teleprompter> = ({
 
   const handleChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
+      if (!state.active) return;
       const key = (e.nativeEvent as InputEvent).data;
       const target = e.target as HTMLInputElement;
       const selectionStart = target.selectionStart || 0;
 
-      if (target.value.charAt(target.value.length - 1) === " ") {
-        if (target.value === " ") {
-          // begin countdown if not yet started
-          if (disabled || coverTimer !== 4) return;
-          setCoverTimer(3);
-          return;
-        }
+      if (key === " ") {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.NEXT_WORD,
           payload: {
@@ -735,13 +730,34 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             nextWordElem: nextWordRef,
           },
         });
-      } else if (
+        return;
+      }
+
+      console.log(
+        target.value,
+        target.value.length,
+        state.telemetry.history[state.currentWordIndex],
+        Object.keys(state.telemetry.history[state.currentWordIndex]).length
+      );
+
+      if (
         target.value.length >
         Object.keys(state.telemetry.history[state.currentWordIndex]).length
       ) {
         return;
+      }
+
+      // detect end of daily challenge
+      if (
+        state.mode === "daily" &&
+        !nextWordRef &&
+        target.value.length ===
+          Object.keys(state.telemetry.history[state.currentWordIndex]).length
+      ) {
+        dispatch({
+          type: TEXT_PROMPT_ACTIONS.END,
+        });
       } else {
-        if (!state.active) return;
         dispatch({
           type: TEXT_PROMPT_ACTIONS.INPUT_CHANGE,
           payload: {
@@ -751,22 +767,9 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             currentPerformanceTime: window.performance.now(),
           },
         });
-        // detect end of daily challenge
-        if (
-          state.mode === "daily" &&
-          !nextWordRef &&
-          target.value.length ===
-            Object.keys(state.telemetry.history[state.currentWordIndex]).length
-        ) {
-          dispatch({
-            type: TEXT_PROMPT_ACTIONS.END,
-          });
-        }
       }
     },
     [
-      coverTimer,
-      disabled,
       nextWordRef,
       state.active,
       state.currentWordIndex,
@@ -907,6 +910,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             autoCorrect="off"
             spellCheck="false"
             autoCapitalize="off"
+            onPaste={(e) => e.preventDefault()}
           />
           <InputInstruction
             style={{
