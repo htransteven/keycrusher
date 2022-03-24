@@ -957,7 +957,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
             {state.mode === "default" && (
               <TelepromptStatusData>
                 {challengeTimer < 10 ? "0" : ""}
-                {challengeTimer}s left
+                {Math.round(challengeTimer / 1000)}s left
               </TelepromptStatusData>
             )}
           </>
