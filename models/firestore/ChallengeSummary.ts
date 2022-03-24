@@ -16,7 +16,7 @@ export interface ChallengeTimeData {
 export interface ChallengeSummary {
   mode: ChallengeMode;
   wpm: number;
-  challengeDuration: number;
+  challengeDuration: number; // milliseconds
   telemetry: Telemetry;
   time: ChallengeTimeData;
 }

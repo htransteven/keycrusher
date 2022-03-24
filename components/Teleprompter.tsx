@@ -201,7 +201,7 @@ const INITIAL_STATE: TeleprompterState = {
   mode: "default",
   active: false,
   wpm: 0,
-  challengeDuration: 30,
+  challengeDuration: 30000,
   time: {
     unix: {
       startTime: 0,
@@ -523,7 +523,7 @@ interface Teleprompter
 
 export const Teleprompter: React.FC<Teleprompter> = ({
   mode = "default",
-  challengeDuration = 30,
+  challengeDuration = 30000,
   coverText = "Ready for the challenge?",
   disabled,
   onMoreWords,
@@ -604,7 +604,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
   useEffect(() => {
     if (!state.active) return;
     const timerTick = setInterval(() => {
-      if (challengeTimer === 0) {
+      if (challengeTimer <= 0) {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.END,
         });
@@ -613,7 +613,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       dispatch({
         type: TEXT_PROMPT_ACTIONS.UPDATE_WPM,
       });
-      setChallengeTimer((prev) => --prev);
+      setChallengeTimer((prev) => prev - 1000);
     }, 1000);
 
     return () => {

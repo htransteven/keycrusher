@@ -1,11 +1,8 @@
-import { subDays } from "date-fns";
 import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
 import { NextApiHandler } from "next";
 import admin from "../../../lib/firebase";
 import { ChallengeSummary } from "../../../models/firestore/ChallengeSummary";
-import { DailyChallenge } from "../../../models/firestore/DailyChallenge";
-import { Stats } from "../../../models/firestore/stats";
-import { challengeSummaryToDailyChallengeSummary } from "../../../utils/api/challengeSummaryToDailyChallengeSummary";
+import { MLChallengeEntry } from "../../../models/firestore/ml";
 
 interface GETQuery {
   username?: string;
@@ -116,6 +113,19 @@ const handlePOST: NextApiHandler = async (req, res) => {
   );
 
   try {
+    /** Collect anonymous randomized challenge submissions for ML model */
+    if (true) {
+      const mlChallengeDataPayload: MLChallengeEntry = {
+        challengeDuration: summary.challengeDuration,
+        wpm: summary.wpm,
+        accuracy:
+          summary.telemetry.numCorrect /
+          5 /
+          (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+      };
+      await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
+    }
+
     await db
       .collection(`stats/${userId}/history`)
       .doc(dateFormatted)

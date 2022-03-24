@@ -4,6 +4,7 @@ import { NextApiHandler } from "next";
 import admin from "../../../lib/firebase";
 import { ChallengeSummary } from "../../../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../../../models/firestore/DailyChallenge";
+import { MLChallengeEntry } from "../../../models/firestore/ml";
 import { Stats } from "../../../models/firestore/stats";
 import { challengeSummaryToDailyChallengeSummary } from "../../../utils/api/challengeSummaryToDailyChallengeSummary";
 
@@ -89,6 +90,19 @@ const handlePOST: NextApiHandler = async (req, res) => {
         .doc(dateFormatted)
         .create(summary);
     }
+  }
+
+  /** Collect anonymous randomized challenge submissions for ML model */
+  if (true) {
+    const mlChallengeDataPayload: MLChallengeEntry = {
+      challengeDuration: summary.challengeDuration,
+      wpm: summary.wpm,
+      accuracy:
+        summary.telemetry.numCorrect /
+        5 /
+        (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+    };
+    await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
   }
 
   // update daily aggregate stats
