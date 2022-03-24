@@ -120,7 +120,6 @@ const handlePOST: NextApiHandler = async (req, res) => {
         wpm: summary.wpm,
         accuracy:
           summary.telemetry.numCorrect /
-          5 /
           (summary.telemetry.numCorrect + summary.telemetry.numErrors),
       };
       await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
