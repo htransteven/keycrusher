@@ -30,6 +30,7 @@ const HomePage: NextPage = () => {
 
   const onComplete = useCallback(
     async (summary: ChallengeSummary) => {
+      if (challengeSummary) return;
       setChallengeSummary(summary);
 
       const res = await fetch("/api/challenge", {
@@ -42,7 +43,7 @@ const HomePage: NextPage = () => {
         alert("failed to upload challenge");
       }
     },
-    [firebaseUser]
+    [challengeSummary, firebaseUser?.uid]
   );
 
   const onReset = useCallback(() => {
