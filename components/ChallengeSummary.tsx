@@ -71,7 +71,7 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
         label="Challenge Duration"
         value={
           mode === "default"
-            ? `${challengeDuration}s`
+            ? `${toFixed(challengeDuration / 1000, 0)}s`
             : `${toFixed(
                 (time.performance.endTime - time.performance.startTime) / 1000,
                 3

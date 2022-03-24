@@ -35,7 +35,9 @@ const HomePage: NextPage = () => {
 
       const res = await fetch("/api/challenge", {
         method: "POST",
-        headers: { authorization: `Bearer ${firebaseUser?.uid}` },
+        headers: firebaseUser
+          ? { authorization: `Bearer ${firebaseUser.uid}` }
+          : undefined,
         body: JSON.stringify(summary),
       });
       if (!res.ok) {
@@ -43,7 +45,7 @@ const HomePage: NextPage = () => {
         alert("failed to upload challenge");
       }
     },
-    [challengeSummary, firebaseUser?.uid]
+    [challengeSummary, firebaseUser]
   );
 
   const onReset = useCallback(() => {

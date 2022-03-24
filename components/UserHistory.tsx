@@ -140,7 +140,7 @@ export const UserHistory = () => {
               ) : (
                 <Data
                   label="Challenge Duration"
-                  value={`${summary.challengeDuration}s`}
+                  value={`${summary.challengeDuration / 1000}s`}
                 />
               )}
             </HistoryEntryRight>
