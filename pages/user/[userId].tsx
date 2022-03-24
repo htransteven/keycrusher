@@ -278,12 +278,13 @@ const UserPage = () => {
     );
   }, [firebaseUser, otherUser, setUser, user]);
 
-  console.log(otherUser, user);
-
   return (
     <>
       <Head>
-        <title>Key Crusher | Profile</title>
+        <title>
+          {otherUser ? `${otherUser.username}'s Profile` : "User Profile"} | Key
+          Crusher
+        </title>
         <meta
           name="description"
           content="A simple and fun speed typing application :)"

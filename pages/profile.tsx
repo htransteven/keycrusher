@@ -159,7 +159,7 @@ const ProfilePage = () => {
   return (
     <>
       <Head>
-        <title>Key Crusher | Profile</title>
+        <title>Your Profile | Key Crusher</title>
         <meta
           name="description"
           content="A simple and fun speed typing application :)"

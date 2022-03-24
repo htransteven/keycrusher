@@ -5,6 +5,8 @@ import SettingsIcon from "../assets/gear-solid.svg";
 import LeaderBoardIcon from "../assets/list-ol-solid.svg";
 import AboutIcon from "../assets/question-solid.svg";
 import { useRouter } from "next/router";
+import Image from "next/image";
+import logo_src from "../assets/logo.png";
 
 const NavbarContainer = styled.div`
   display: flex;
@@ -12,6 +14,7 @@ const NavbarContainer = styled.div`
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 10px;
+  gap: 10px;
 `;
 
 const NavbarOptionsContainer = styled.div`
@@ -65,6 +68,14 @@ const NavbarIconWrapper = styled.a<{ active?: boolean }>`
     active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
 `;
 
+const AppTitleWrapper = styled.div`
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+`;
+
 const AlphaIndicator = styled.span`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.navbar.alphaIndicatorColor};
@@ -89,22 +100,34 @@ const AppTitleContainer = styled.a`
   flex-flow: column nowrap;
 `;
 
-const AppTitleWrapper = styled.div`
+const AppTitleTextWrapper = styled.div`
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
   justify-content: flex-start;
 `;
 
+const NavLogoWrapper = styled.div`
+  position: relative;
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+`;
+
 const AppTitle = () => {
   return (
     <Link href={"/"} passHref>
-      <AppTitleContainer>
-        <AlphaIndicator>ALPHA</AlphaIndicator>
-        <AppTitleWrapper>
-          <Key>KEY</Key> <Crusher>CRUSHER</Crusher>
-        </AppTitleWrapper>
-      </AppTitleContainer>
+      <AppTitleWrapper>
+        <NavLogoWrapper>
+          <Image src={logo_src} alt={"Key Crusher Logo"} layout={"fill"} />
+        </NavLogoWrapper>
+        <AppTitleContainer>
+          <AlphaIndicator>ALPHA</AlphaIndicator>
+          <AppTitleTextWrapper>
+            <Key>KEY</Key> <Crusher>CRUSHER</Crusher>
+          </AppTitleTextWrapper>
+        </AppTitleContainer>
+      </AppTitleWrapper>
     </Link>
   );
 };

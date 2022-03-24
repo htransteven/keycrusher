@@ -1,6 +1,9 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import styled from "styled-components";
+import logo_src from "../assets/logo.png";
+import { BREAKPOINTS } from "../styles/breakpoints";
 
 const Container = styled.div``;
 
@@ -39,7 +42,7 @@ const AboutPage = () => {
   return (
     <>
       <Head>
-        <title>Key Crusher | About</title>
+        <title>About | Key Crusher</title>
         <meta name="description" content="About Key Crusher" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

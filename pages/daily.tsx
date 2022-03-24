@@ -219,7 +219,7 @@ const HomePage: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Key Crusher | Daily Challenge</title>
+        <title>Daily Challenge | Key Crusher</title>
         <meta
           name="description"
           content="The daily typing challenge for Key Crusher."

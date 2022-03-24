@@ -24,7 +24,7 @@ const PrivacyPage = () => {
   return (
     <>
       <Head>
-        <title>Key Crusher | Privacy Policy</title>
+        <title>Privacy Policy | Key Crusher</title>
         <meta name="description" content="Key Crusher's Privacy Policy" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
