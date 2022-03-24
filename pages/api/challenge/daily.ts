@@ -100,6 +100,7 @@ const handlePOST: NextApiHandler = async (req, res) => {
       accuracy:
         summary.telemetry.numCorrect /
         (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+      completedOnMobile: summary.completedOnMobile,
     };
     await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
   }
