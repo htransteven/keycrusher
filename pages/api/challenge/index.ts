@@ -108,7 +108,7 @@ const handlePOST: NextApiHandler = async (req, res) => {
   }
 
   if (!hasAuthorization) {
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(200).end(summary);
     return;
   }
 
