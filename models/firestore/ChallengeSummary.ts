@@ -19,4 +19,5 @@ export interface ChallengeSummary {
   challengeDuration: number; // milliseconds
   telemetry: Telemetry;
   time: ChallengeTimeData;
+  completedOnMobile: boolean;
 }

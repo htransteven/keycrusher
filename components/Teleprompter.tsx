@@ -20,6 +20,7 @@ import { Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { toFixed } from "../utils/numbers";
 import { KeyCap } from "./Keycap";
+import { isMobile } from "react-device-detect";
 
 const WORD_GAP = "0.35rem";
 const FONT_SIZE = "1.5rem";
@@ -664,6 +665,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
         telemetry: state.telemetry,
         time: state.time,
         wpm: state.wpm,
+        completedOnMobile: isMobile,
       });
     }
   }, [
