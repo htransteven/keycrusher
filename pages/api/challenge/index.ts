@@ -87,10 +87,7 @@ const handlePOST: NextApiHandler = async (req, res) => {
   const db = admin.firestore();
 
   const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.includes("Bearer ")) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  let hasAuthorization = authHeader && authHeader.includes("Bearer ");
 
   const summary = JSON.parse(req.body) as POSTBody;
   if (summary.mode !== "default") {
@@ -98,7 +95,24 @@ const handlePOST: NextApiHandler = async (req, res) => {
     return;
   }
 
-  const userId = authHeader.split(" ")[1];
+  /** Collect anonymous randomized challenge submissions for ML model */
+  if (true) {
+    const mlChallengeDataPayload: MLChallengeEntry = {
+      challengeDuration: summary.challengeDuration,
+      wpm: summary.wpm,
+      accuracy:
+        summary.telemetry.numCorrect /
+        (summary.telemetry.numCorrect + summary.telemetry.numErrors),
+    };
+    await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
+  }
+
+  if (!hasAuthorization) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const userId = (authHeader as string).split(" ")[1];
   const userDoc = await db.collection("users").doc(userId).get();
   if (!userDoc.exists) {
     res.status(401).json({ message: "Invalid user id" });
@@ -113,18 +127,6 @@ const handlePOST: NextApiHandler = async (req, res) => {
   );
 
   try {
-    /** Collect anonymous randomized challenge submissions for ML model */
-    if (true) {
-      const mlChallengeDataPayload: MLChallengeEntry = {
-        challengeDuration: summary.challengeDuration,
-        wpm: summary.wpm,
-        accuracy:
-          summary.telemetry.numCorrect /
-          (summary.telemetry.numCorrect + summary.telemetry.numErrors),
-      };
-      await db.collection(`ml/data/challenges`).add(mlChallengeDataPayload);
-    }
-
     await db
       .collection(`stats/${userId}/history`)
       .doc(dateFormatted)

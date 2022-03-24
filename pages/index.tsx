@@ -32,11 +32,9 @@ const HomePage: NextPage = () => {
     async (summary: ChallengeSummary) => {
       setChallengeSummary(summary);
 
-      if (!firebaseUser) return;
-
       const res = await fetch("/api/challenge", {
         method: "POST",
-        headers: { authorization: `Bearer ${firebaseUser.uid}` },
+        headers: { authorization: `Bearer ${firebaseUser?.uid}` },
         body: JSON.stringify(summary),
       });
       if (!res.ok) {
