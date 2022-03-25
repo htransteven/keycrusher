@@ -605,7 +605,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
   useEffect(() => {
     if (!state.active) return;
     const timerTick = setInterval(() => {
-      if (challengeTimer <= 0) {
+      if (state.mode === "default" && challengeTimer <= 0) {
         dispatch({
           type: TEXT_PROMPT_ACTIONS.END,
         });
@@ -658,7 +658,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
 
   // use onComplete
   useEffect(() => {
-    if (state.time.performance.endTime !== 0) {
+    if (state.time.unix.endTime !== 0) {
       onComplete({
         mode: state.mode,
         challengeDuration: state.challengeDuration,
@@ -674,7 +674,6 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     state.mode,
     state.telemetry,
     state.time,
-    state.time.performance.endTime,
     state.wpm,
   ]);
 
