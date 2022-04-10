@@ -5,6 +5,7 @@ import { DARK_THEME } from "../styles/themes/darkTheme";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { PageWrapper } from "../components/PageWrapper";
 import { UserProvider } from "../contexts/UserContext";
+import { NavHeightProvider } from "../contexts/NavHeightContext";
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -13,7 +14,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html {
-    margin:0;
+    margin: 0;
     padding: 0;
     color: ${({ theme }) => theme.primaryTextColor};
     background-color: ${({ theme }) => theme.htmlBackgroundColor};
@@ -36,6 +37,11 @@ const GlobalStyle = createGlobalStyle`
     @media only screen and (min-width: ${BREAKPOINTS.desktop}) {
       font-size: 16px;
     }
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
   }
 
   input, button {
@@ -80,9 +86,11 @@ function MyApp({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={DARK_THEME}>
         <FirebaseProvider>
           <UserProvider>
-            <PageWrapper>
-              <Component {...pageProps} />
-            </PageWrapper>
+            <NavHeightProvider>
+              <PageWrapper>
+                <Component {...pageProps} />
+              </PageWrapper>
+            </NavHeightProvider>
           </UserProvider>
         </FirebaseProvider>
       </ThemeProvider>

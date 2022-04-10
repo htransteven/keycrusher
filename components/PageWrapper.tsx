@@ -1,25 +1,19 @@
 import styled from "styled-components";
-import { BREAKPOINTS } from "../styles/breakpoints";
+import { useNavHeight } from "../contexts/NavHeightContext";
 import { Navbar } from "./Navbar";
 
-const Wrapper = styled.div`
-  padding: 30px 15vw;
+const Wrapper = styled.div<{ navHeight: number }>`
+  padding: 0;
   min-height: 100vh;
-
-  @media only screen and (max-width: ${BREAKPOINTS.tabletLarge}) {
-    padding: 30px 10vw;
-  }
-
-  @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
-    padding: 30px 10px;
-  }
+  margin-top: -${({ navHeight }) => navHeight}px;
 `;
 
 export const PageWrapper: React.FC = ({ children }) => {
+  const navHeight = useNavHeight();
   return (
-    <Wrapper>
+    <>
       <Navbar />
-      {children}
-    </Wrapper>
+      <Wrapper navHeight={navHeight}>{children}</Wrapper>
+    </>
   );
 };

@@ -1,27 +1,39 @@
 import Link from "next/link";
 import styled from "styled-components";
-import ProfileIcon from "../assets/user-solid.svg";
-import SettingsIcon from "../assets/gear-solid.svg";
-import LeaderBoardIcon from "../assets/list-ol-solid.svg";
-import AboutIcon from "../assets/question-solid.svg";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import logo_src from "../assets/logo.png";
+import { BREAKPOINTS } from "../styles/breakpoints";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useSetNavHeight } from "../contexts/NavHeightContext";
 
-const NavbarContainer = styled.div`
+const NavbarContainer = styled.div<{ hasScrolled: boolean }>`
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+  left: 0;
   display: flex;
   flex-flow: row wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
   gap: 10px;
+  background-color: ${({ hasScrolled, theme }) =>
+    hasScrolled ? theme.navbar.backgroundColor : "transparent"};
+  padding: 20px 30px;
+
+  transition: 0.2s background-color;
+
+  @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
+    justify-content: center;
+  }
 `;
 
-const NavbarOptionsContainer = styled.div`
+const NavbarSectionContainer = styled.div`
   display: flex;
-  flex-flow: row wrap;
-  align-items: flex-end;
-  justify-content: flex-end;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
 `;
 
@@ -29,43 +41,18 @@ const NavbarTextOptionWrapper = styled.a<{ active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 15px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.navbar.backgroundColor};
+  padding: 5px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
 
   transition: 0.3s all;
-  border: 1px solid
+  border-bottom: 2px solid
     ${({ theme, active }) =>
       active ? theme.navbar.accentColor : "transparent"};
   color: ${({ theme, active }) =>
-    active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
-`;
-
-const NavbarTextOption = styled.span`
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const NavbarIconWrapper = styled.a<{ active?: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.navbar.backgroundColor};
-
-  transition: 0.3s all;
-  border: 1px solid
-    ${({ theme, active }) =>
-      active ? theme.navbar.accentColor : "transparent"};
-  color: ${({ theme, active }) =>
-    active ? theme.navbar.accentColor : theme.navbar.primaryTextColor};
+    active ? theme.navbar.accentColor : theme.primaryTextColor};
 `;
 
 const AppTitleWrapper = styled.div`
@@ -77,7 +64,7 @@ const AppTitleWrapper = styled.div`
 `;
 
 const AlphaIndicator = styled.span`
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   color: ${({ theme }) => theme.navbar.alphaIndicatorColor};
   letter-spacing: 2px;
   font-weight: bold;
@@ -85,12 +72,12 @@ const AlphaIndicator = styled.span`
 `;
 
 const Key = styled.span`
-  font-size: 2rem;
+  font-size: 1.5rem;
   color: ${({ theme }) => theme.navbar.appTitle.keyColor};
   margin-right: 0.2rem;
 `;
 const Crusher = styled.span`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: ${({ theme }) => theme.navbar.appTitle.crusherColor};
 `;
@@ -110,8 +97,8 @@ const AppTitleTextWrapper = styled.div`
 const NavLogoWrapper = styled.div`
   position: relative;
   display: flex;
-  height: 3rem;
-  width: 3rem;
+  height: 2.5rem;
+  width: 2.5rem;
 `;
 
 const AppTitle = () => {
@@ -133,55 +120,66 @@ const AppTitle = () => {
 };
 
 export const Navbar = () => {
+  const setNavHeight = useSetNavHeight();
   const router = useRouter();
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!navRef.current) return;
+
+    const navHeight = navRef.current.offsetHeight;
+    setNavHeight(navHeight);
+
+    const onScroll = () => {
+      if (window.scrollY >= navHeight) {
+        setHasScrolled(true);
+      } else {
+        setHasScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [setNavHeight]);
+
   return (
-    <NavbarContainer>
-      <NavbarOptionsContainer>
+    <NavbarContainer ref={navRef} hasScrolled={hasScrolled}>
+      <NavbarSectionContainer>
         <AppTitle />
-      </NavbarOptionsContainer>
-      <NavbarOptionsContainer>
-        <Link href={router.asPath.includes("/daily") ? "/" : "/daily"} passHref>
-          <NavbarTextOptionWrapper active={router.asPath.includes("/daily")}>
-            <NavbarTextOption>Daily Challenge</NavbarTextOption>
+      </NavbarSectionContainer>
+      <NavbarSectionContainer>
+        <Link href={"/"} passHref>
+          <NavbarTextOptionWrapper active={router.asPath === "/"}>
+            Home
           </NavbarTextOptionWrapper>
         </Link>
-        <NavbarIconWrapper style={{ opacity: 0.5, cursor: "not-allowed" }}>
-          <LeaderBoardIcon
-            style={{
-              height: "1.5rem",
-              width: "1.5rem",
-            }}
-          />
-        </NavbarIconWrapper>
+        <Link href={"/challenges/classic"} passHref>
+          <NavbarTextOptionWrapper
+            active={router.asPath.includes("/challenges/classic")}
+          >
+            Classic
+          </NavbarTextOptionWrapper>
+        </Link>
+        <Link href={"/daily"} passHref>
+          <NavbarTextOptionWrapper active={router.asPath.includes("/daily")}>
+            Daily Challenge
+          </NavbarTextOptionWrapper>
+        </Link>
         <Link href={"/profile"} passHref>
-          <NavbarIconWrapper active={router.asPath.includes("/profile")}>
-            <ProfileIcon
-              style={{
-                height: "1.5rem",
-                width: "1.5rem",
-              }}
-            />
-          </NavbarIconWrapper>
+          <NavbarTextOptionWrapper active={router.asPath.includes("/profile")}>
+            Profile
+          </NavbarTextOptionWrapper>
         </Link>
-        <NavbarIconWrapper style={{ opacity: 0.5, cursor: "not-allowed" }}>
-          <SettingsIcon
-            style={{
-              height: "1.5rem",
-              width: "1.5rem",
-            }}
-          />
-        </NavbarIconWrapper>
         <Link href={"/about"} passHref>
-          <NavbarIconWrapper active={router.asPath.includes("/about")}>
-            <AboutIcon
-              style={{
-                height: "1.5rem",
-                width: "1.5rem",
-              }}
-            />
-          </NavbarIconWrapper>
+          <NavbarTextOptionWrapper active={router.asPath.includes("/about")}>
+            About
+          </NavbarTextOptionWrapper>
         </Link>
-      </NavbarOptionsContainer>
+      </NavbarSectionContainer>
     </NavbarContainer>
   );
 };

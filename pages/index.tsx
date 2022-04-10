@@ -1,57 +1,63 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { useCallback, useState } from "react";
+import React from "react";
 import styled from "styled-components";
-import { PostChallengeStats } from "../components/PostChallengeStats";
-import { Teleprompter } from "../components/Teleprompter";
-import { useFirebase } from "../contexts/FirebaseContext";
-import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
+import { FlexColumn, FlexRow } from "../components/layout/FlexLayout";
+import ProfileCard from "../components/ProfileCard";
+import LockIcon from "../assets/lock-solid.svg";
+import { PaddedContainer } from "../components/layout/Containers";
 
-const Container = styled.div``;
+interface LargeCardTemplateProps {
+  background?: string;
+  locked?: boolean;
+}
+
+const LargeCardTemplate = styled.div<LargeCardTemplateProps>`
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  height: 100%;
+  font-size: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(10 10 10 / 20%);
+  transition: 0.2s outline;
+  white-space: nowrap;
+
+  outline: 2px solid transparent;
+  ${({ background }) =>
+    !background
+      ? ""
+      : `
+    background: ${background};
+  `}
+
+  &:hover {
+    cursor: ${({ locked }) => (locked ? "not-allowed" : "pointer")};
+    outline: 1.5px solid white;
+  }
+`;
+
+const LockedCardOverlay = styled.div`
+  z-index: 1;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+type LargeCardProps = React.HTMLAttributes<HTMLDivElement> &
+  LargeCardTemplateProps;
+
+const LargeCard: React.FC<LargeCardProps> = ({ children, ...props }) => {
+  return <LargeCardTemplate {...props}>{children}</LargeCardTemplate>;
+};
 
 const HomePage: NextPage = () => {
-  const { firestore, firebaseUser } = useFirebase();
-  const [challengeSummary, setChallengeSummary] =
-    useState<ChallengeSummary | null>(null);
-
-  const getMoreWords = useCallback(async (wordCount: number) => {
-    const query = new URLSearchParams();
-    query.append("count", `${wordCount}`);
-
-    const res = await fetch(`/api/words?${query.toString()}`);
-
-    if (!res.ok) {
-      console.log("failed to get more words");
-      return null;
-    }
-
-    return (await res.json()) as string[];
-  }, []);
-
-  const onComplete = useCallback(
-    async (summary: ChallengeSummary) => {
-      if (challengeSummary) return;
-      setChallengeSummary(summary);
-
-      const res = await fetch("/api/challenge", {
-        method: "POST",
-        headers: firebaseUser
-          ? { authorization: `Bearer ${firebaseUser.uid}` }
-          : undefined,
-        body: JSON.stringify(summary),
-      });
-      if (!res.ok) {
-        console.log(await res.json());
-        alert("failed to upload challenge");
-      }
-    },
-    [challengeSummary, firebaseUser]
-  );
-
-  const onReset = useCallback(() => {
-    setChallengeSummary(null);
-  }, []);
-
   return (
     <>
       <Head>
@@ -62,14 +68,47 @@ const HomePage: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Container>
-        <Teleprompter
-          onMoreWords={getMoreWords}
-          onComplete={onComplete}
-          onReset={onReset}
-        />
-        {challengeSummary && <PostChallengeStats {...challengeSummary} />}
-      </Container>
+      <PaddedContainer>
+        <FlexColumn style={{ gap: "0px" }}>
+          <h2>Welcome Back!</h2>
+          <ProfileCard />
+        </FlexColumn>
+        <FlexColumn style={{ gap: "0px" }}>
+          <h2>Game Modes</h2>
+          <FlexRow style={{ gap: "20px" }}>
+            <LargeCard
+              background={
+                "linear-gradient(45deg,rgba(42, 90, 199, 1) 0%,rgba(41, 199, 172, 1) 100%)"
+              }
+            >
+              Classic
+            </LargeCard>
+            <LargeCard
+              background={
+                "linear-gradient(45deg, rgba(42,90,199,1) 0%, rgba(240,84,84,1) 100%)"
+              }
+            >
+              Daily Challenge
+            </LargeCard>
+            <LargeCard
+              background={
+                "linear-gradient(45deg, rgba(255,170,76,1) 25%, rgba(240,84,84,1) 100%)"
+              }
+              locked={true}
+            >
+              Online Battle
+              <LockedCardOverlay>
+                <LockIcon
+                  style={{
+                    height: "1.5rem",
+                    width: "auto",
+                  }}
+                />
+              </LockedCardOverlay>
+            </LargeCard>
+          </FlexRow>
+        </FlexColumn>
+      </PaddedContainer>
     </>
   );
 };

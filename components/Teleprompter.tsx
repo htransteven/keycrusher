@@ -16,14 +16,14 @@ import {
   ChallengeSummary,
   ChallengeTimeData,
 } from "../models/firestore/ChallengeSummary";
-import { Telemetry } from "../models/Telemetry";
+import { RawTelemetry, Telemetry } from "../models/Telemetry";
 import { BREAKPOINTS } from "../styles/breakpoints";
-import { toFixed } from "../utils/numbers";
 import { KeyCap } from "./Keycap";
 import { isMobile } from "react-device-detect";
+import { getTelemetryFromRawTelemetry } from "../utils/history";
 
 const WORD_GAP = "0.35rem";
-const FONT_SIZE = "1.5rem";
+const FONT_SIZE = "1.2rem";
 
 const Container = styled.div`
   position: relative;
@@ -39,15 +39,15 @@ const Cursor = styled.div`
 const TeleprompterWrapper = styled.div`
   position: relative;
   padding: 20px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.teleprompt.backgroundColor};
   margin-bottom: 10px;
-  border-radius: 3px;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 4px;
+
+  background-color: ${({ theme }) => theme.teleprompt.backgroundColor};
 `;
 
-const TeleprompterCover = styled.div`
+const TeleprompterCover = styled.div<{ gradient?: string }>`
   position: absolute;
   top: 0;
   left: 0;
@@ -59,10 +59,16 @@ const TeleprompterCover = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${({ theme }) => theme.teleprompt.textColor};
+  color: ${({ theme }) => theme.primaryTextColor};
   font-size: ${FONT_SIZE};
 
   background-color: ${({ theme }) => theme.teleprompt.backgroundColor};
+  ${({ gradient }) =>
+    !gradient
+      ? ""
+      : `
+    background: ${gradient};
+  `}
 `;
 
 const TeleprompterBox = styled.div`
@@ -94,13 +100,13 @@ const TelepromptWord = styled.span`
 const ControlBox = styled.div`
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
 `;
 
 const TelepromptStatus = styled.span`
   display: flex;
   flex-flow: row wrap;
   gap: 10px;
+  margin-top: 10px;
 `;
 
 const TelepromptStatusData = styled.span`
@@ -128,10 +134,9 @@ const StyledInput = styled.input`
   width: 100%;
   outline: none;
   border: none;
-  padding: 20px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 4px;
 
   background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
   color: ${({ theme }) => theme.teleprompt.textColor};
@@ -163,9 +168,8 @@ const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   padding: 20px;
-  border-radius: 3px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 4px;
   color: ${({ theme }) => theme.teleprompt.textColor};
   background-color: ${({ theme }) => theme.teleprompt.input.backgroundColor};
 `;
@@ -190,7 +194,7 @@ export interface TeleprompterState {
     fetchWords: number;
     lineStartWordIndex: number;
   };
-  telemetry: Telemetry;
+  telemetry: RawTelemetry;
   userInput: string;
   currentWordIndex: number;
   currentCharIndex: number;
@@ -199,10 +203,10 @@ export interface TeleprompterState {
 }
 
 const INITIAL_STATE: TeleprompterState = {
-  mode: "default",
+  mode: "classic",
   active: false,
   wpm: 0,
-  challengeDuration: 30000,
+  challengeDuration: 15000,
   time: {
     unix: {
       startTime: 0,
@@ -220,6 +224,7 @@ const INITIAL_STATE: TeleprompterState = {
   telemetry: {
     numCorrect: 0,
     numErrors: 0,
+    wpm: [],
     history: {},
   },
   userInput: "",
@@ -257,6 +262,9 @@ interface TeleprompteEndAction {
 
 interface TeleprompteUpdateWPMAction {
   type: TEXT_PROMPT_ACTIONS.UPDATE_WPM;
+  payload: {
+    time: number;
+  };
 }
 
 interface TeleprompterTimerTickAction {
@@ -286,6 +294,7 @@ interface TeleprompterNextWordAction {
   payload: {
     prevWordElem: HTMLSpanElement | null;
     nextWordElem: HTMLSpanElement | null;
+    currentPerformanceTime: number;
   };
 }
 
@@ -360,12 +369,20 @@ const reducer = (
       };
     }
     case TEXT_PROMPT_ACTIONS.UPDATE_WPM:
+      const newWPM =
+        state.telemetry.numCorrect /
+        5 /
+        ((Date.now() - state.time.unix.startTime) / 1000 / 60);
       return {
         ...state,
-        wpm:
-          state.telemetry.numCorrect /
-          5 /
-          ((Date.now() - state.time.unix.startTime) / 1000 / 60), //convert milliseconds to minute
+        wpm: newWPM, //convert milliseconds to minute
+        telemetry: {
+          ...state.telemetry,
+          wpm: [
+            ...state.telemetry.wpm,
+            { wpm: newWPM, time: action.payload.time },
+          ],
+        },
       };
     case TEXT_PROMPT_ACTIONS.MOVE_CARET:
       return { ...state, currentCharIndex: action.payload.selectionIndex };
@@ -387,7 +404,12 @@ const reducer = (
                 [baseWordIndex + wordIndex]: word.split("").reduce(
                   (charAcc, char, charIndex) => ({
                     ...charAcc,
-                    [charIndex]: { char, correct: false, rtt: 0 },
+                    [charIndex]: {
+                      char,
+                      correct: false,
+                      responseTime: 0,
+                      time: -1,
+                    },
                   }),
                   {}
                 ),
@@ -398,6 +420,20 @@ const reducer = (
         },
       };
     case TEXT_PROMPT_ACTIONS.NEXT_WORD: {
+      const newHistory = { ...state.telemetry.history };
+      if (
+        state.currentCharIndex <
+        Object.keys(state.telemetry.history[state.currentWordIndex]).length
+      ) {
+        // fill the rest of the word as incorrect
+        let i = state.currentCharIndex;
+        while (newHistory[state.currentWordIndex][i]) {
+          newHistory[state.currentWordIndex][i].time =
+            action.payload.currentPerformanceTime -
+            state.time.performance.startTime;
+          i++;
+        }
+      }
       if (
         action.payload.nextWordElem &&
         action.payload.nextWordElem?.offsetTop !==
@@ -414,6 +450,7 @@ const reducer = (
             ),
             lineStartWordIndex: state.currentWordIndex + 1,
           },
+          telemetry: { ...state.telemetry, history: newHistory },
           userInput: "",
           currentWordIndex: state.currentWordIndex + 1,
           currentCharIndex: 0,
@@ -422,6 +459,7 @@ const reducer = (
 
       return {
         ...state,
+        telemetry: { ...state.telemetry, history: newHistory },
         userInput: "",
         currentWordIndex: state.currentWordIndex + 1,
         currentCharIndex: 0,
@@ -455,6 +493,7 @@ const reducer = (
             userInput: action.payload.value,
             currentCharIndex: action.payload.selectionIndex,
             telemetry: {
+              wpm: [...state.telemetry.wpm],
               numCorrect,
               numErrors,
               history: {
@@ -466,7 +505,8 @@ const reducer = (
                       action.payload.selectionIndex
                     ],
                     correct: false,
-                    rtt: 0,
+                    responseTime: 0,
+                    time: -1,
                   },
                 },
               },
@@ -482,9 +522,12 @@ const reducer = (
       history[state.currentWordIndex][state.currentCharIndex] = {
         ...history[state.currentWordIndex][state.currentCharIndex],
         correct: action.payload.key === correctChar,
-        rtt: Math.round(
+        responseTime: Math.round(
           action.payload.currentPerformanceTime - state.prevPerformanceTime
         ),
+        time:
+          action.payload.currentPerformanceTime -
+          state.time.performance.startTime,
       };
 
       const numCorrect =
@@ -502,6 +545,7 @@ const reducer = (
         userInput: action.payload.value,
         currentCharIndex: action.payload.selectionIndex,
         telemetry: {
+          wpm: [...state.telemetry.wpm],
           numCorrect,
           numErrors,
           history,
@@ -519,20 +563,21 @@ interface Teleprompter
   onComplete: (state: ChallengeSummary) => void;
   onReset: () => void;
   coverText?: string;
+  coverGradient?: string;
   disabled?: boolean; // use to disable input
 }
 
 export const Teleprompter: React.FC<Teleprompter> = ({
-  mode = "default",
-  challengeDuration = 30000,
+  mode = "classic",
+  challengeDuration = 15000,
   coverText = "Ready for the challenge?",
+  coverGradient,
   disabled,
   onMoreWords,
   onComplete,
   onReset,
 }) => {
   const theme = useTheme();
-  const { firebaseUser } = useFirebase();
   const [state, dispatch] = useReducer(reducer, {
     ...INITIAL_STATE,
     mode,
@@ -543,7 +588,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
   const [charRef, setCharRef] = useState<HTMLSpanElement | null>(null);
   const [nextWordRef, setNextWordRef] = useState<HTMLSpanElement | null>(null);
   const [coverTimer, setCoverTimer] = useState(4);
-  const [challengeTimer, setChallengeTimer] = useState(state.challengeDuration);
+  const [challengeTimer, setChallengeTimer] = useState(0);
   const [resetSpinCounter, setResetSpinCounter] = useState(0);
 
   const handleReset = useCallback(() => {
@@ -553,7 +598,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     setWordRef(null);
     setCharRef(null);
     setNextWordRef(null);
-    setChallengeTimer(INITIAL_STATE.challengeDuration);
+    setChallengeTimer(0);
     setCoverTimer(4);
     setResetSpinCounter((prev) => prev + 1);
     setTimeout(() => inputRef?.current?.focus(), 100);
@@ -565,9 +610,11 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       switch (e.key) {
         case " ": {
           if (e.ctrlKey) {
+            e.preventDefault();
             handleReset();
           } else {
             if (disabled || coverTimer !== 4) return;
+            e.preventDefault();
             setCoverTimer(3);
             setTimeout(() => inputRef?.current?.focus(), 100);
           }
@@ -600,31 +647,42 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     return () => clearInterval(interval);
   }, [state.active, coverTimer]);
 
+  // detect end of classic challenge
+  // 250 is an abitrary buffer in ms to account for processing time
+  useEffect(() => {
+    if (!state.active || state.mode !== "classic") return;
+    if (
+      window.performance.now() - state.time.performance.startTime + 250 >=
+      state.challengeDuration
+    ) {
+      dispatch({
+        type: TEXT_PROMPT_ACTIONS.END,
+      });
+    }
+  });
+
   // Challenge interval timer, update WPM
   // Even if mode is set to "daily", the interval timer is still used to update WPM
   useEffect(() => {
     if (!state.active) return;
     const timerTick = setInterval(() => {
-      if (state.mode === "default" && challengeTimer <= 0) {
-        dispatch({
-          type: TEXT_PROMPT_ACTIONS.END,
-        });
-        return;
-      }
       dispatch({
         type: TEXT_PROMPT_ACTIONS.UPDATE_WPM,
+        payload: {
+          time: challengeTimer,
+        },
       });
-      setChallengeTimer((prev) => prev - 1000);
+      setChallengeTimer((prev) => prev + 1000);
     }, 1000);
 
     return () => {
       clearInterval(timerTick);
     };
-  }, [challengeTimer, state.active, state.mode]);
+  }, [challengeTimer, state.active, state.challengeDuration, state.mode]);
 
   // Fetch words
   useEffect(() => {
-    if (state.mode === "default" && state.teleprompter.fetchWords === 0) {
+    if (state.mode === "classic" && state.teleprompter.fetchWords === 0) {
       return;
     }
     if (
@@ -662,7 +720,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       onComplete({
         mode: state.mode,
         challengeDuration: state.challengeDuration,
-        telemetry: state.telemetry,
+        telemetry: getTelemetryFromRawTelemetry(state.telemetry),
         time: state.time,
         wpm: state.wpm,
         completedOnMobile: isMobile,
@@ -729,17 +787,11 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           payload: {
             prevWordElem: wordRef,
             nextWordElem: nextWordRef,
+            currentPerformanceTime: window.performance.now(),
           },
         });
         return;
       }
-
-      console.log(
-        target.value,
-        target.value.length,
-        state.telemetry.history[state.currentWordIndex],
-        Object.keys(state.telemetry.history[state.currentWordIndex]).length
-      );
 
       if (
         target.value.length >
@@ -851,7 +903,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     if (state.active) {
       return "";
     } else {
-      if (state.mode === "default") {
+      if (state.mode === "classic") {
         if (state.time.unix.endTime !== 0) {
           return "Press CTRL + SPACE to restart";
         } else {
@@ -893,7 +945,7 @@ export const Teleprompter: React.FC<Teleprompter> = ({
           )}
         </TeleprompterBox>
         {coverTimer > 0 && (
-          <TeleprompterCover>
+          <TeleprompterCover gradient={coverGradient}>
             {coverTimer > 3 ? coverText : `Start in ${coverTimer}...`}
           </TeleprompterCover>
         )}
@@ -939,42 +991,14 @@ export const Teleprompter: React.FC<Teleprompter> = ({
         >
           <ResetIcon
             style={{
-              height: "2rem",
-              width: "2rem",
+              height: FONT_SIZE,
+              width: FONT_SIZE,
               transition: "0.3s all",
               transform: `rotate(calc(180deg * ${resetSpinCounter}))`,
             }}
           />
         </IconWrapper>
       </ControlBox>
-      <TelepromptStatus>
-        {state.active && (
-          <>
-            <TelepromptStatusData>
-              {isFinite(state.wpm) ? toFixed(state.wpm, 2) : "0"} WPM
-            </TelepromptStatusData>
-            {state.mode === "default" && (
-              <TelepromptStatusData>
-                {challengeTimer < 10 ? "0" : ""}
-                {Math.round(challengeTimer / 1000)}s left
-              </TelepromptStatusData>
-            )}
-          </>
-        )}
-        {!firebaseUser && (
-          <Link href={"/profile"} passHref>
-            <TelepromptStatusData
-              style={{
-                border: `1px solid ${theme.teleprompt.error}`,
-                cursor: "pointer",
-                whiteSpace: "normal",
-              }}
-            >
-              Click here to login and save your attempts!
-            </TelepromptStatusData>
-          </Link>
-        )}
-      </TelepromptStatus>
     </Container>
   );
 };

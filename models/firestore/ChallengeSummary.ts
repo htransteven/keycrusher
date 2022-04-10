@@ -1,6 +1,6 @@
 import { Telemetry } from "../Telemetry";
 
-export type ChallengeMode = "default" | "daily";
+export type ChallengeMode = "classic" | "daily";
 
 export interface ChallengeTimeData {
   unix: {

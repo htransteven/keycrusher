@@ -7,24 +7,42 @@ import { toFixed } from "../utils/numbers";
 const Container = styled.div`
   display: flex;
   flex-flow: row wrap;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 35px;
 `;
 
 const DataContainer = styled.div`
+  position: relative;
   height: 100%;
   width: max-content;
   min-width: 125px;
   display: flex;
   flex-flow: column nowrap;
-  align-items: flex-start;
-  justify-content: flex-start;
-  padding: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 30px;
   gap: 5px;
-  border-radius: 5px;
-  background-color: ${({ theme }) => theme.challengeSummary.backgroundColor};
-  border: 1px solid ${({ theme }) => theme.challengeSummary.borderColor};
+  //border-radius: 5px;
+  //background-color: ${({ theme }) => theme.challengeSummary.backgroundColor};
+  //border: 1px solid ${({ theme }) => theme.challengeSummary.borderColor};
+
+  &::before {
+    content: "";
+    background-color: ${({ theme }) => theme.dividers.color};
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 110%;
+    transform: translateY(-50%);
+    width: 1px;
+  }
+
+  &:first-of-type {
+    &::before {
+      width: 0;
+    }
+  }
 
   @media only screen and (max-width: ${BREAKPOINTS.tabletLarge}) {
     flex: 1;
@@ -68,10 +86,14 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
       />
       <Data label="Mistakes" value={numErrors} />
       <Data
-        label="Challenge Duration"
+        label="Words Typed"
+        value={toFixed((numCorrect + numErrors) / 5, 2)}
+      />
+      <Data
+        label="Duration"
         value={
-          mode === "default"
-            ? `${toFixed(challengeDuration / 1000, 0)}s`
+          mode === "classic"
+            ? `${toFixed(challengeDuration / 1000, 3)}s`
             : `${toFixed(
                 (time.performance.endTime - time.performance.startTime) / 1000,
                 3

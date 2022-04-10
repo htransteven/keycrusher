@@ -90,7 +90,7 @@ const handlePOST: NextApiHandler = async (req, res) => {
   let hasAuthorization = authHeader && authHeader.includes("Bearer ");
 
   const summary = JSON.parse(req.body) as POSTBody;
-  if (summary.mode !== "default") {
+  if (summary.mode !== "classic") {
     res.status(400).json({ message: "Not a default challenge attempt" });
     return;
   }
