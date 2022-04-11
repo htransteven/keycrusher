@@ -58,19 +58,20 @@ const GlobalStyle = createGlobalStyle`
   }
   h3 {
     font-weight: 500;
-    color: ${({ theme }) => theme.secondaryTextColor};
+    color: ${({ theme }) => theme.primaryTextColor};
   }
 
   p, a {
     margin: 0;
-    font-size: 0.9rem;
   }
   p {
+    font-size: 0.9rem;
     color: ${({ theme }) => theme.tertiaryTextColor};
   }
   a {
+    font-size: 1rem;
     text-decoration: none;
-    color: ${({ theme }) => theme.greenAccent};
+    color: ${({ theme }) => theme.green};
   }
 
   li {

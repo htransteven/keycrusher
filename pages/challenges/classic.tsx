@@ -2,7 +2,6 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useCallback, useState } from "react";
 import { PaddedContainer } from "../../components/layout/Containers";
-import { HorizontalDivider } from "../../components/layout/Dividers";
 import { PostChallengeStats } from "../../components/PostChallengeStats";
 import { Teleprompter } from "../../components/Teleprompter";
 import { useFirebase } from "../../contexts/FirebaseContext";
@@ -61,7 +60,7 @@ const ClassicTestPage: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <PaddedContainer includeNavPadding={true}>
+      <PaddedContainer includeNavPadding={true} paddingSize={"more"}>
         <Teleprompter
           onMoreWords={getMoreWords}
           onComplete={onComplete}
@@ -71,9 +70,10 @@ const ClassicTestPage: NextPage = () => {
           }
         />
       </PaddedContainer>
-      <HorizontalDivider length={"50%"} style={{ padding: "20px 0" }} />
       <PaddedContainer>
-        {challengeSummary && <PostChallengeStats {...challengeSummary} />}
+        {challengeSummary && (
+          <PostChallengeStats challengeSummary={challengeSummary} />
+        )}
       </PaddedContainer>
     </>
   );

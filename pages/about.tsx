@@ -1,11 +1,7 @@
 import Head from "next/head";
-import Image from "next/image";
 import Link from "next/link";
 import styled from "styled-components";
-import logo_src from "../assets/logo.png";
-import { BREAKPOINTS } from "../styles/breakpoints";
-
-const Container = styled.div``;
+import { PaddedContainer } from "../components/layout/Containers";
 
 const Title = styled.h2`
   border-left: 5px solid ${({ theme }) => theme.graphs.info.title.accent};
@@ -46,7 +42,7 @@ const AboutPage = () => {
         <meta name="description" content="About Key Crusher" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Container>
+      <PaddedContainer includeNavPadding={true}>
         <Title>About Key Crusher</Title>
         <Paragraph>
           Key Crusher is a web app designed to calculate a user&apos;s typing
@@ -116,7 +112,7 @@ const AboutPage = () => {
             hello@keycrusher.com 🚀
           </ContactEmail>
         </ContactInfo>
-      </Container>
+      </PaddedContainer>
     </>
   );
 };

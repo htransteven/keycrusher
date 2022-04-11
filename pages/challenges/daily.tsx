@@ -4,16 +4,15 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
-import { GlobalStatsComparison } from "../components/daily/GlobalStatsComparison";
-import { DailyStatsViewer } from "../components/DailyStatsViewer";
-import { Loading } from "../components/Loading";
-import { PostChallengeStats } from "../components/PostChallengeStats";
-import { Teleprompter } from "../components/Teleprompter";
-import { useFirebase } from "../contexts/FirebaseContext";
-import { DailyStats, DailyStatsChallengeSummary } from "../models/api/stats";
-import { ChallengeSummary } from "../models/firestore/ChallengeSummary";
-import { DailyChallenge } from "../models/firestore/DailyChallenge";
-import { challengeSummaryToDailyChallengeSummary } from "../utils/api/challengeSummaryToDailyChallengeSummary";
+import { GlobalStatsComparison } from "../../components/daily/GlobalStatsComparison";
+import { PaddedContainer } from "../../components/layout/Containers";
+import { Loading } from "../../components/Loading";
+import { PostChallengeStats } from "../../components/PostChallengeStats";
+import { Teleprompter } from "../../components/Teleprompter";
+import { useFirebase } from "../../contexts/FirebaseContext";
+import { DailyStats } from "../../models/api/stats";
+import { ChallengeSummary } from "../../models/firestore/ChallengeSummary";
+import { DailyChallenge } from "../../models/firestore/DailyChallenge";
 
 const Container = styled.div``;
 
@@ -27,8 +26,6 @@ const HomePage: NextPage = () => {
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(
     null
   );
-  const [dailyChallengeSummary, setDailyChallengeSummary] =
-    useState<DailyStatsChallengeSummary | null>(null);
   const [challengeSummary, setChallengeSummary] =
     useState<ChallengeSummary | null>(null);
 
@@ -85,7 +82,7 @@ const HomePage: NextPage = () => {
       );
 
       if (dailyStats.history[todayFormatted]) {
-        setDailyChallengeSummary(dailyStats.history[todayFormatted]);
+        setChallengeSummary(dailyStats.history[todayFormatted]);
         setHasAttempted(true);
       } else {
         setHasAttempted(false);
@@ -134,9 +131,6 @@ const HomePage: NextPage = () => {
       if (hasAttempted) return;
       setHasAttempted(true);
       setChallengeSummary(summary);
-      setDailyChallengeSummary(
-        challengeSummaryToDailyChallengeSummary(summary)
-      );
 
       /** Daily Stats: Firestore Version */
       const challengeRes = await fetch("/api/challenge/daily", {
@@ -172,21 +166,18 @@ const HomePage: NextPage = () => {
         "MM-dd-yyyy"
       );
 
-      const dailyChallengeSummary =
-        challengeSummaryToDailyChallengeSummary(summary);
-
       const newStats: DailyStats = dailyStats
         ? {
             ...dailyStats,
             history: {
               ...dailyStats?.history,
-              [todayFormatted]: dailyChallengeSummary,
+              [todayFormatted]: summary,
             },
           }
         : {
             streak: 1,
             history: {
-              [todayFormatted]: dailyChallengeSummary,
+              [todayFormatted]: summary,
             },
           };
 
@@ -226,7 +217,7 @@ const HomePage: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Container>
+      <PaddedContainer includeNavPadding={true} paddingSize={"more"}>
         {(loadingFirebaseUser || hasAttempted === null) && (
           <Loading value="DAILY CHALLENGE" />
         )}
@@ -258,17 +249,21 @@ const HomePage: NextPage = () => {
             disabled={hasAttempted}
           />
         )}
-        {dailyChallenge && dailyChallengeSummary && (
+      </PaddedContainer>
+      <PaddedContainer>
+        <PostChallengeStats
+          challengeSummary={challengeSummary}
+          dailyStats={dailyStats}
+        />
+      </PaddedContainer>
+      {dailyChallenge && challengeSummary && (
+        <PaddedContainer>
           <GlobalStatsComparison
             dailyChallenge={dailyChallenge}
-            summary={dailyChallengeSummary}
+            summary={challengeSummary}
           />
-        )}
-        {challengeSummary && <PostChallengeStats {...challengeSummary} />}
-        {dailyStats && Object.keys(dailyStats.history).length > 0 && (
-          <DailyStatsViewer {...dailyStats} />
-        )}
-      </Container>
+        </PaddedContainer>
+      )}
     </>
   );
 };

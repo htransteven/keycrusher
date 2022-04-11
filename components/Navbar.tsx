@@ -126,22 +126,28 @@ export const Navbar = () => {
   const navRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    if (!navRef.current) return;
-
-    const navHeight = navRef.current.offsetHeight;
-    setNavHeight(navHeight);
+    const onResize = () => {
+      if (!navRef.current) return;
+      setNavHeight(navRef.current.offsetHeight);
+    };
 
     const onScroll = () => {
-      if (window.scrollY >= navHeight) {
+      if (!navRef.current) return;
+      if (window.scrollY >= navRef.current.offsetHeight) {
         setHasScrolled(true);
       } else {
         setHasScrolled(false);
       }
     };
 
+    window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onScroll);
 
+    onResize();
+    onScroll();
+
     return () => {
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
     };
   }, [setNavHeight]);
@@ -164,9 +170,9 @@ export const Navbar = () => {
             Classic
           </NavbarTextOptionWrapper>
         </Link>
-        <Link href={"/daily"} passHref>
+        <Link href={"/challenges/daily"} passHref>
           <NavbarTextOptionWrapper active={router.asPath.includes("/daily")}>
-            Daily Challenge
+            Daily
           </NavbarTextOptionWrapper>
         </Link>
         <Link href={"/profile"} passHref>

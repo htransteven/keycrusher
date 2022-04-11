@@ -1,8 +1,9 @@
 export const COLOR_PALLETE = {
   offwhite: "#DDDDDD",
-  offblack: "#111111",
-  grey: "#535353",
-  lightGrey: "#7c7c7c",
+  offblack: "#0e0e0e",
+  grey: "#a1a1a1",
+  lightGrey: "##bcbcbc",
+  lighterGrey: "#dadada",
   midGrey: "#222831",
   darkGrey: "#12141d",
   baseBlue: "#30475E",
@@ -23,24 +24,32 @@ export const COLOR_PALLETE = {
     grey: "rgba(68, 68, 68, 0.5)",
   },
   transparent: "transparent",
+  backgroundLayers: {
+    one: "#111111",
+    two: "#222222",
+    three: "#2e2e2e",
+    four: "#272d36",
+    five: "#323c4e",
+  },
+  iconColors: {
+    streak: "#F05454",
+    wpm: "#a179ff",
+    correctness: "#ffee79",
+    accuracy: "#00cd05",
+    responseTime: "#29C7AC",
+    duration: "#47baff",
+  },
 };
 
 export const DARK_THEME = {
-  red: COLOR_PALLETE.red,
-  green: COLOR_PALLETE.green,
-  blue: COLOR_PALLETE.blue,
-  highlight: COLOR_PALLETE.highlight,
-  translucent: COLOR_PALLETE.translucent,
-  htmlBackgroundColor: COLOR_PALLETE.midGrey,
-  primaryTextColor: COLOR_PALLETE.white,
-  secondaryTextColor: COLOR_PALLETE.lightGrey,
+  ...COLOR_PALLETE,
+  htmlBackgroundColor: COLOR_PALLETE.backgroundLayers.one,
+  primaryTextColor: COLOR_PALLETE.offwhite,
+  secondaryTextColor: COLOR_PALLETE.lighterGrey,
   tertiaryTextColor: COLOR_PALLETE.grey,
-  greenAccent: COLOR_PALLETE.green,
-  blueAccent: COLOR_PALLETE.blue,
-  redAccent: COLOR_PALLETE.red,
   charts: {
     text: {
-      primaryColor: COLOR_PALLETE.white,
+      primaryColor: COLOR_PALLETE.offwhite,
       secondaryColor: COLOR_PALLETE.lightGrey,
       tertiaryColor: COLOR_PALLETE.grey,
     },
@@ -51,7 +60,7 @@ export const DARK_THEME = {
         translucentColor: COLOR_PALLETE.translucent.green,
       },
       secondary: {
-        mainColor: COLOR_PALLETE.grey,
+        mainColor: COLOR_PALLETE.darkGrey,
         highlightColor: COLOR_PALLETE.highlight.grey,
         translucentColor: COLOR_PALLETE.translucent.grey,
       },
@@ -74,7 +83,7 @@ export const DARK_THEME = {
     },
   },
   navbar: {
-    primaryTextColor: COLOR_PALLETE.white,
+    primaryTextColor: COLOR_PALLETE.offwhite,
     accentColor: COLOR_PALLETE.green,
     backgroundColor: COLOR_PALLETE.offblack,
     appTitle: {
@@ -89,11 +98,11 @@ export const DARK_THEME = {
     keycard: {
       backgroundColor: COLOR_PALLETE.grey,
       labelColor: COLOR_PALLETE.offwhite,
-      textColor: COLOR_PALLETE.white,
+      textColor: COLOR_PALLETE.offwhite,
     },
     history: {
       backgroundColor: COLOR_PALLETE.midGrey,
-      textColor: COLOR_PALLETE.white,
+      textColor: COLOR_PALLETE.offwhite,
       secondaryTextColor: COLOR_PALLETE.offwhite,
       dividerColor: COLOR_PALLETE.green,
       hover: {
@@ -123,7 +132,7 @@ export const DARK_THEME = {
     errorMessageColor: COLOR_PALLETE.red,
     input: {
       labelColor: COLOR_PALLETE.offwhite,
-      textColor: COLOR_PALLETE.white,
+      textColor: COLOR_PALLETE.offwhite,
       backgroundColor: COLOR_PALLETE.darkGrey,
       borderColor: COLOR_PALLETE.grey,
       active: {
@@ -141,7 +150,7 @@ export const DARK_THEME = {
         },
         default: {
           backgroundColor: COLOR_PALLETE.green,
-          textColor: COLOR_PALLETE.white,
+          textColor: COLOR_PALLETE.offwhite,
           borderColor: COLOR_PALLETE.transparent,
         },
         default_inverse: {
@@ -150,26 +159,26 @@ export const DARK_THEME = {
           borderColor: COLOR_PALLETE.green,
           hover: {
             backgroundColor: COLOR_PALLETE.green,
-            textColor: COLOR_PALLETE.white,
+            textColor: COLOR_PALLETE.offwhite,
           },
         },
         neutral: {
           backgroundColor: COLOR_PALLETE.grey,
-          textColor: COLOR_PALLETE.white,
+          textColor: COLOR_PALLETE.offwhite,
           borderColor: COLOR_PALLETE.transparent,
         },
         neutral_inverse: {
           backgroundColor: COLOR_PALLETE.transparent,
-          textColor: COLOR_PALLETE.white,
+          textColor: COLOR_PALLETE.offwhite,
           borderColor: COLOR_PALLETE.grey,
           hover: {
             backgroundColor: COLOR_PALLETE.grey,
-            textColor: COLOR_PALLETE.white,
+            textColor: COLOR_PALLETE.offwhite,
           },
         },
         negative: {
           backgroundColor: COLOR_PALLETE.red,
-          textColor: COLOR_PALLETE.white,
+          textColor: COLOR_PALLETE.offwhite,
           borderColor: COLOR_PALLETE.transparent,
         },
         negative_inverse: {
@@ -178,7 +187,7 @@ export const DARK_THEME = {
           borderColor: COLOR_PALLETE.red,
           hover: {
             backgroundColor: COLOR_PALLETE.red,
-            textColor: COLOR_PALLETE.white,
+            textColor: COLOR_PALLETE.offwhite,
           },
         },
         helper: {
@@ -197,13 +206,13 @@ export const DARK_THEME = {
     },
   },
   teleprompt: {
-    backgroundColor: COLOR_PALLETE.darkGrey,
+    backgroundColor: COLOR_PALLETE.backgroundLayers.two,
     textColor: COLOR_PALLETE.offwhite,
     correct: COLOR_PALLETE.green,
     error: COLOR_PALLETE.red,
     cursorColor: COLOR_PALLETE.translucent.blue,
     input: {
-      backgroundColor: COLOR_PALLETE.darkGrey,
+      backgroundColor: COLOR_PALLETE.backgroundLayers.two,
       instructions: {
         textColor: COLOR_PALLETE.offwhite,
       },
@@ -212,7 +221,7 @@ export const DARK_THEME = {
   graphs: {
     info: {
       title: {
-        textColor: COLOR_PALLETE.white,
+        textColor: COLOR_PALLETE.offwhite,
         accent: COLOR_PALLETE.green,
       },
       description: {
@@ -229,7 +238,7 @@ export const DARK_THEME = {
     axis: {
       color: COLOR_PALLETE.offwhite,
     },
-    referenceLineColor: COLOR_PALLETE.white,
+    referenceLineColor: COLOR_PALLETE.offwhite,
   },
   challengeSummary: {
     backgroundColor: COLOR_PALLETE.transparent,

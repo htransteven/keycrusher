@@ -23,7 +23,7 @@ Chart.register(
   Tooltip
 );
 
-export const ResponseVsKeyUsageTime: React.FC<
+export const ResponseVsKeyUsageTimeChart: React.FC<
   ResponseTimeMapEntry & { duration: number }
 > = ({ char, averageResponseTime, history, duration }) => {
   const theme = useTheme();
@@ -95,14 +95,6 @@ export const ResponseVsKeyUsageTime: React.FC<
                 borderDash: [8, 12],
                 borderColor: theme.charts.text.primaryColor,
                 borderWidth: 1.5,
-                label: {
-                  enabled: true,
-                  content: `AVG RESPONSE TIME = ${toFixed(
-                    averageResponseTime,
-                    3
-                  )} ms`,
-                  textAlign: "end",
-                },
               },
             },
           },
@@ -112,7 +104,7 @@ export const ResponseVsKeyUsageTime: React.FC<
             type: "linear",
             title: {
               display: true,
-              text: "Time",
+              text: "Time (s)",
               color: theme.charts.text.primaryColor,
             },
             grid: {
@@ -121,19 +113,16 @@ export const ResponseVsKeyUsageTime: React.FC<
             },
             ticks: {
               color: theme.charts.text.primaryColor,
-              callback: (value) => {
-                return `${value} s`;
-              },
             },
             beginAtZero: true,
-            max: duration / 1000,
+            max: toFixed(duration / 1000, 3),
           },
           y: {
             type: "linear",
             beginAtZero: true,
             title: {
               display: true,
-              text: "Response Time",
+              text: "Response Time (ms)",
               color: theme.charts.text.primaryColor,
             },
             grid: {
@@ -142,9 +131,6 @@ export const ResponseVsKeyUsageTime: React.FC<
             },
             ticks: {
               color: theme.charts.text.primaryColor,
-              callback: (value) => {
-                return `${value} ms`;
-              },
             },
           },
         },
@@ -170,14 +156,6 @@ export const ResponseVsKeyUsageTime: React.FC<
             borderDash: [8, 12],
             borderColor: theme.charts.text.primaryColor,
             borderWidth: 1.5,
-            label: {
-              enabled: true,
-              content: `AVG RESPONSE TIME = ${toFixed(
-                averageResponseTime,
-                3
-              )} ms`,
-              textAlign: "end",
-            },
           },
         },
       };

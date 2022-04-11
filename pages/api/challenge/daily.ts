@@ -6,7 +6,6 @@ import { ChallengeSummary } from "../../../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../../../models/firestore/DailyChallenge";
 import { MLChallengeEntry } from "../../../models/firestore/ml";
 import { Stats } from "../../../models/firestore/stats";
-import { challengeSummaryToDailyChallengeSummary } from "../../../utils/api/challengeSummaryToDailyChallengeSummary";
 
 type POSTBody = ChallengeSummary;
 
@@ -110,13 +109,10 @@ const handlePOST: NextApiHandler = async (req, res) => {
     await db.collection("daily").doc(dateFormatted).get()
   ).data() as DailyChallenge;
 
-  const dailyChallengeSummary =
-    challengeSummaryToDailyChallengeSummary(summary);
-
   dailyChallenge.attempts += 1;
-  dailyChallenge.sumAccuracy += dailyChallengeSummary.accuracy;
-  dailyChallenge.sumTime += dailyChallengeSummary.challengeDuration;
-  dailyChallenge.sumWPM += dailyChallengeSummary.wpm;
+  dailyChallenge.sumAccuracy += summary.telemetry.accuracy;
+  dailyChallenge.sumTime += summary.challengeDuration;
+  dailyChallenge.sumWPM += summary.wpm;
 
   await db.collection("daily").doc(dateFormatted).set(dailyChallenge);
 

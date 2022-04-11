@@ -37,9 +37,12 @@ export interface ResponseTimeMapEntry {
 }
 
 export interface Telemetry extends RawTelemetry {
+  accuracy: number;
   averageResponseTime: number;
-  actualWordsTyped: number;
-  estimatedWordsTyped: number;
+  totals: {
+    characters: number;
+    words: number;
+  };
   averageWPM: number;
   responseTimeMap: ResponseTimeMap;
 }

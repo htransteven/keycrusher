@@ -1,11 +1,11 @@
 import { format } from "date-fns";
 import styled from "styled-components";
 import { useUser } from "../contexts/UserContext";
-import { HorizontalDivider, VerticleDivider } from "./layout/Dividers";
 import { LabelValuePair } from "./layout/LabelValuePair";
 import Image from "next/image";
 import logo_src from "../assets/logo.png";
 import { FlexColumn, FlexRow } from "./layout/FlexLayout";
+import Link from "next/link";
 
 const Container = styled.div`
   background: linear-gradient(
@@ -48,7 +48,11 @@ const ProfileCard: React.FC = () => {
   const { user } = useUser();
 
   if (!user) {
-    return <div>Loading </div>;
+    return (
+      <div>
+        Click <Link href={"/profile"}>here</Link> to sign in
+      </div>
+    );
   }
 
   return (
@@ -80,7 +84,6 @@ const ProfileCard: React.FC = () => {
               labelStyle={LABEL_STYLE}
             />
           </FlexRow>
-          <HorizontalDivider />
           <FlexRow style={{ gap: "20px" }}>
             <LabelValuePair
               direction="column"

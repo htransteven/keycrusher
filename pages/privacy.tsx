@@ -1,5 +1,6 @@
 import Head from "next/head";
 import styled from "styled-components";
+import { PaddedContainer } from "../components/layout/Containers";
 
 const Container = styled.div``;
 
@@ -28,7 +29,7 @@ const PrivacyPage = () => {
         <meta name="description" content="Key Crusher's Privacy Policy" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Container>
+      <PaddedContainer includeNavPadding={true}>
         <Title>Privacy Policy</Title>
         <Paragraph>
           Your privacy is important to us. It is Key Crusher&apos;s policy to
@@ -293,7 +294,7 @@ const PrivacyPage = () => {
         </Paragraph>
         <Paragraph>Steven Huynh-Tran </Paragraph>
         <Paragraph>hello@keycrusher.com </Paragraph>
-      </Container>
+      </PaddedContainer>
     </>
   );
 };

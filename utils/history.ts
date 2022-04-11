@@ -7,7 +7,8 @@ export const getTelemetryFromRawTelemetry = (
 
   const { history } = telemetry;
 
-  let actualWordsTyped = 0;
+  let charsTyped = 0;
+  let wordsTyped = 0;
 
   for (const wIndex in history) {
     let finish = false;
@@ -39,11 +40,13 @@ export const getTelemetryFromRawTelemetry = (
           time: keyTelemetry.time,
         });
       }
+
+      charsTyped++;
     }
     if (finish) {
       break;
     }
-    actualWordsTyped++;
+    wordsTyped++;
   }
 
   let overallSumResponseTime = 0;
@@ -63,8 +66,11 @@ export const getTelemetryFromRawTelemetry = (
       telemetry.wpm.reduce((sum, wpm) => sum + wpm.wpm, 0) /
       telemetry.wpm.length,
     averageResponseTime: overallSumResponseTime / overallSumUsage,
-    actualWordsTyped,
-    estimatedWordsTyped: telemetry.numCorrect + telemetry.numErrors / 5,
+    accuracy: telemetry.numCorrect / charsTyped,
+    totals: {
+      characters: charsTyped,
+      words: wordsTyped,
+    },
     responseTimeMap,
     ...telemetry,
   };

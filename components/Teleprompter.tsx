@@ -262,9 +262,6 @@ interface TeleprompteEndAction {
 
 interface TeleprompteUpdateWPMAction {
   type: TEXT_PROMPT_ACTIONS.UPDATE_WPM;
-  payload: {
-    time: number;
-  };
 }
 
 interface TeleprompterTimerTickAction {
@@ -369,18 +366,19 @@ const reducer = (
       };
     }
     case TEXT_PROMPT_ACTIONS.UPDATE_WPM:
+      const now = Date.now();
       const newWPM =
         state.telemetry.numCorrect /
         5 /
-        ((Date.now() - state.time.unix.startTime) / 1000 / 60);
+        ((now - state.time.unix.startTime) / 1000 / 60);
       return {
         ...state,
-        wpm: newWPM, //convert milliseconds to minute
+        wpm: newWPM,
         telemetry: {
           ...state.telemetry,
           wpm: [
             ...state.telemetry.wpm,
-            { wpm: newWPM, time: action.payload.time },
+            { wpm: newWPM, time: now - state.time.unix.startTime },
           ],
         },
       };
@@ -632,7 +630,9 @@ export const Teleprompter: React.FC<Teleprompter> = ({
     };
   }, [coverTimer, disabled, handleReset, state.time.unix.endTime]);
 
-  // Teleprompt cover interval timer
+  /**
+   * Interval setup for teleprompt cover
+   */
   useEffect(() => {
     if (coverTimer >= 4 || coverTimer <= 0) return;
     const interval = setInterval(() => {
@@ -658,27 +658,34 @@ export const Teleprompter: React.FC<Teleprompter> = ({
       dispatch({
         type: TEXT_PROMPT_ACTIONS.END,
       });
+      dispatch({
+        type: TEXT_PROMPT_ACTIONS.UPDATE_WPM,
+      });
     }
   });
 
-  // Challenge interval timer, update WPM
-  // Even if mode is set to "daily", the interval timer is still used to update WPM
+  /**
+   * Interval Setup
+   * 1. Challenge Timer (Unix)
+   * 2. WPM Timer (Unix)
+   */
   useEffect(() => {
     if (!state.active) return;
-    const timerTick = setInterval(() => {
-      dispatch({
-        type: TEXT_PROMPT_ACTIONS.UPDATE_WPM,
-        payload: {
-          time: challengeTimer,
-        },
-      });
+    const challengeInterval = setInterval(() => {
       setChallengeTimer((prev) => prev + 1000);
     }, 1000);
 
+    const wpmInterval = setInterval(() => {
+      dispatch({
+        type: TEXT_PROMPT_ACTIONS.UPDATE_WPM,
+      });
+    }, 1000);
+
     return () => {
-      clearInterval(timerTick);
+      clearInterval(challengeInterval);
+      clearInterval(wpmInterval);
     };
-  }, [challengeTimer, state.active, state.challengeDuration, state.mode]);
+  }, [state.active]);
 
   // Fetch words
   useEffect(() => {

@@ -6,13 +6,14 @@ import { FlexColumn, FlexRow } from "../components/layout/FlexLayout";
 import ProfileCard from "../components/ProfileCard";
 import LockIcon from "../assets/lock-solid.svg";
 import { PaddedContainer } from "../components/layout/Containers";
+import Link from "next/link";
 
 interface LargeCardTemplateProps {
   background?: string;
   locked?: boolean;
 }
 
-const LargeCardTemplate = styled.div<LargeCardTemplateProps>`
+const LargeCardTemplate = styled.a<LargeCardTemplateProps>`
   position: relative;
   display: flex;
   flex: 1;
@@ -25,6 +26,7 @@ const LargeCardTemplate = styled.div<LargeCardTemplateProps>`
   box-shadow: 0 4px 16px rgb(10 10 10 / 20%);
   transition: 0.2s outline;
   white-space: nowrap;
+  color: ${({ theme }) => theme.white};
 
   outline: 2px solid transparent;
   ${({ background }) =>
@@ -50,7 +52,7 @@ const LockedCardOverlay = styled.div`
   justify-content: center;
 `;
 
-type LargeCardProps = React.HTMLAttributes<HTMLDivElement> &
+type LargeCardProps = React.HTMLAttributes<HTMLAnchorElement> &
   LargeCardTemplateProps;
 
 const LargeCard: React.FC<LargeCardProps> = ({ children, ...props }) => {
@@ -68,7 +70,7 @@ const HomePage: NextPage = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <PaddedContainer>
+      <PaddedContainer includeNavPadding={true}>
         <FlexColumn style={{ gap: "0px" }}>
           <h2>Welcome Back!</h2>
           <ProfileCard />
@@ -76,20 +78,24 @@ const HomePage: NextPage = () => {
         <FlexColumn style={{ gap: "0px" }}>
           <h2>Game Modes</h2>
           <FlexRow style={{ gap: "20px" }}>
-            <LargeCard
-              background={
-                "linear-gradient(45deg,rgba(42, 90, 199, 1) 0%,rgba(41, 199, 172, 1) 100%)"
-              }
-            >
-              Classic
-            </LargeCard>
-            <LargeCard
-              background={
-                "linear-gradient(45deg, rgba(42,90,199,1) 0%, rgba(240,84,84,1) 100%)"
-              }
-            >
-              Daily Challenge
-            </LargeCard>
+            <Link href={"/challenges/classic"} passHref={true}>
+              <LargeCard
+                background={
+                  "linear-gradient(45deg,rgba(42, 90, 199, 1) 0%,rgba(41, 199, 172, 1) 100%)"
+                }
+              >
+                Classic
+              </LargeCard>
+            </Link>
+            <Link href={"/challenges/daily"} passHref={true}>
+              <LargeCard
+                background={
+                  "linear-gradient(45deg, rgba(42,90,199,1) 0%, rgba(240,84,84,1) 100%)"
+                }
+              >
+                Daily Challenge
+              </LargeCard>
+            </Link>
             <LargeCard
               background={
                 "linear-gradient(45deg, rgba(255,170,76,1) 25%, rgba(240,84,84,1) 100%)"
