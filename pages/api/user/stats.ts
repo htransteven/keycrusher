@@ -4,7 +4,6 @@ import admin from "../../../lib/firebase";
 import { DailyStats } from "../../../models/api/stats";
 import { ChallengeSummary } from "../../../models/firestore/ChallengeSummary";
 import { Stats } from "../../../models/firestore/stats";
-import { challengeSummaryToDailyChallengeSummary } from "../../../utils/api/challengeSummaryToDailyChallengeSummary";
 
 const handleGET: NextApiHandler = async (req, res) => {
   const db = admin.firestore();
@@ -60,9 +59,7 @@ const handleGET: NextApiHandler = async (req, res) => {
       "MM-dd-yyyy"
     );
     dailyStatsTranformed.history[dateFormatted] =
-      challengeSummaryToDailyChallengeSummary(
-        historyDoc.data() as ChallengeSummary
-      );
+      historyDoc.data() as ChallengeSummary;
   }
 
   await db

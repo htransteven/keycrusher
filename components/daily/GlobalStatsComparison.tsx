@@ -1,5 +1,5 @@
 import styled, { useTheme } from "styled-components";
-import { DailyStatsChallengeSummary } from "../../models/api/stats";
+import { ChallengeSummary } from "../../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../../models/firestore/DailyChallenge";
 import { BREAKPOINTS } from "../../styles/breakpoints";
 import { toFixed } from "../../utils/numbers";
@@ -10,7 +10,7 @@ const Container = styled.div`
   box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
     rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
   background-color: ${({ theme }) => theme.generic.container.backgroundColor};
-  border: 1px solid ${({ theme }) => theme.greenAccent};
+  border: 1px solid ${({ theme }) => theme.green};
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
@@ -80,11 +80,11 @@ const DifferenceValue: React.FC<{
       style={{
         color: inversePositivity
           ? value <= 0
-            ? theme.greenAccent
-            : theme.redAccent
+            ? theme.green
+            : theme.red
           : value >= 0
-          ? theme.greenAccent
-          : theme.redAccent,
+          ? theme.green
+          : theme.red,
       }}
     >
       {value >= 0 ? "▲" : "▼"} {value}
@@ -95,7 +95,7 @@ const DifferenceValue: React.FC<{
 };
 
 interface GlobalComparisonProps {
-  summary: DailyStatsChallengeSummary;
+  summary: ChallengeSummary;
   dailyChallenge: DailyChallenge;
 }
 
@@ -136,12 +136,11 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
         <StatsGridRow>
           <StatsGridRowValue>Accuracy</StatsGridRowValue>
           <StatsGridRowValue>
-            {toFixed(summary.accuracy * 100, 2)}%
+            {toFixed(summary.telemetry.accuracy * 100, 2)}%
           </StatsGridRowValue>
           <StatsGridRowValue>
             {toFixed(
-              ((dailyChallenge.sumAccuracy - summary.accuracy) /
-                (dailyChallenge.attempts - 1)) *
+              (dailyChallenge.sumAccuracy / (dailyChallenge.attempts - 1)) *
                 100,
               2
             )}
@@ -149,9 +148,8 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           </StatsGridRowValue>
           <DifferenceValue
             value={toFixed(
-              (summary.accuracy -
-                (dailyChallenge.sumAccuracy - summary.accuracy) /
-                  (dailyChallenge.attempts - 1)) *
+              (summary.telemetry.accuracy -
+                dailyChallenge.sumAccuracy / dailyChallenge.attempts) *
                 100,
               2
             )}
@@ -165,9 +163,7 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           </StatsGridRowValue>
           <StatsGridRowValue>
             {toFixed(
-              (dailyChallenge.sumTime - summary.challengeDuration) /
-                (dailyChallenge.attempts - 1) /
-                1000,
+              dailyChallenge.sumTime / dailyChallenge.attempts / 1000,
               3
             )}{" "}
             s
@@ -175,8 +171,7 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           <DifferenceValue
             value={toFixed(
               (summary.challengeDuration -
-                (dailyChallenge.sumTime - summary.challengeDuration) /
-                  (dailyChallenge.attempts - 1)) /
+                dailyChallenge.sumTime / dailyChallenge.attempts) /
                 1000,
               3
             )}

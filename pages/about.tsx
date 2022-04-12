@@ -18,7 +18,7 @@ const ListItem = styled.li`
 `;
 
 const TerminologyKey = styled.span`
-  color: ${({ theme }) => theme.greenAccent};
+  color: ${({ theme }) => theme.green};
   font-weight: bold;
 `;
 
@@ -31,7 +31,7 @@ const ContactInfo = styled.div`
 
 const ContactName = styled.span``;
 const ContactEmail = styled.a`
-  color: ${({ theme }) => theme.greenAccent};
+  color: ${({ theme }) => theme.green};
 `;
 
 const AboutPage = () => {
