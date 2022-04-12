@@ -1,7 +1,6 @@
 import styled, { useTheme } from "styled-components";
 import { ChallengeSummary } from "../../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../../models/firestore/DailyChallenge";
-import { BREAKPOINTS } from "../../styles/breakpoints";
 import { toFixed } from "../../utils/numbers";
 import ArrowUpIcon from "../../assets/arrow-up-solid.svg";
 import ArrowDownIcon from "../../assets/arrow-down-solid.svg";
@@ -41,13 +40,16 @@ const StatsGrid = styled.div`
 `;
 
 const StatsGridRowLabel = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.9rem;
   color: ${({ theme }) => theme.tertiaryTextColor};
 `;
+
 const StatsGridRowValue = styled.span`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.primaryTextColor};
-  border-bottom: 1px solid ${({ theme }) => theme.backgroundLayers.three};
 
   transition: 0.15s background-color;
   display: flex;
@@ -61,15 +63,17 @@ const StatsGridRow = styled.div`
   & > * {
     padding: 10px 20px;
 
-    &:first-of-type,
-    &:last-of-type {
-      padding: 10px 0;
+    &:first-child,
+    &:last-child {
+      padding: 10px 10px;
     }
-  }
 
-  &:nth-of-type(2) {
-    & > * {
-      border-top: 1px solid ${({ theme }) => theme.backgroundLayers.three};
+    &:first-child {
+      border-radius: 5px 0 0 5px;
+    }
+
+    &:last-child {
+      border-radius: 0 5px 5px 0;
     }
   }
 
@@ -134,15 +138,14 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
 }) => {
   return (
     <Container>
-      <Title>
-        <IconWrapper>
-          <GlobeIcon />
-        </IconWrapper>
-        Global Average Comparison
-      </Title>
       <StatsGrid>
         <StatsGridRow>
-          <StatsGridRowLabel>Measurement</StatsGridRowLabel>
+          <Title>
+            <IconWrapper>
+              <GlobeIcon />
+            </IconWrapper>
+            Global Average Comparison
+          </Title>
           <StatsGridRowLabel>You</StatsGridRowLabel>
           <StatsGridRowLabel>Global</StatsGridRowLabel>
           <StatsGridRowLabel>Difference</StatsGridRowLabel>

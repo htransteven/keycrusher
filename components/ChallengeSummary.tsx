@@ -3,9 +3,9 @@ import styled, { useTheme } from "styled-components";
 import { ChallengeSummary as ChallengeSummaryProps } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
 import { toFixed } from "../utils/numbers";
+import ModeIcon from "../assets/puzzle-piece-solid.svg";
 import WPMIcon from "../assets/keyboard-solid.svg";
 import AccuracyIcon from "../assets/crosshairs-solid.svg";
-import MistakesIcon from "../assets/spell-check-solid.svg";
 import DurationIcon from "../assets/hourglass-regular.svg";
 import ResponseTimeIcon from "../assets/stopwatch-solid.svg";
 
@@ -80,14 +80,16 @@ export const Data: React.FC<{
   label: string;
   value: React.ReactNode;
   icon?: React.ReactNode;
-}> = ({ label, value, icon }) => {
+  labelStyle?: React.CSSProperties;
+  valueStyle?: React.CSSProperties;
+}> = ({ label, value, icon, labelStyle, valueStyle }) => {
   return (
     <DataWrapper>
-      <DataLabel>
+      <DataLabel style={labelStyle}>
         {icon && <IconWrapper>{icon}</IconWrapper>}
         {label}
       </DataLabel>
-      <DataValue>{value}</DataValue>
+      <DataValue style={valueStyle}>{value}</DataValue>
     </DataWrapper>
   );
 };
@@ -100,11 +102,17 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
   time,
 }) => {
   const theme = useTheme();
-  const { numCorrect, numErrors } = telemetry;
+
   return (
     <Container>
-      <Title>Summary</Title>
+      <Title>Challenge Summary</Title>
       <DataContainer>
+        <Data
+          label="Mode"
+          value={mode}
+          icon={<ModeIcon style={{ fill: theme.iconColors.mode }} />}
+          valueStyle={{ textTransform: "capitalize" }}
+        />
         <Data
           label="WPM"
           value={`${toFixed(wpm, 2)} wpm`}
@@ -112,16 +120,8 @@ export const ChallengeSummary: React.FC<ChallengeSummaryProps> = ({
         />
         <Data
           label="Accuracy"
-          value={`${toFixed(
-            (numCorrect / (numCorrect + numErrors)) * 100,
-            2
-          )}%`}
+          value={`${toFixed(telemetry.accuracy * 100, 2)}%`}
           icon={<AccuracyIcon style={{ fill: theme.iconColors.accuracy }} />}
-        />
-        <Data
-          label="Correctness"
-          value={`${numCorrect} / ${numErrors}`}
-          icon={<MistakesIcon style={{ fill: theme.iconColors.correctness }} />}
         />
         <Data
           label="Average Response Time"

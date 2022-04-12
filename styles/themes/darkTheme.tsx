@@ -32,6 +32,7 @@ export const COLOR_PALLETE = {
     five: "#323c4e",
   },
   iconColors: {
+    mode: "#ff6ad1",
     streak: "#F05454",
     wpm: "#a179ff",
     correctness: "#ffee79",
@@ -60,7 +61,7 @@ export const DARK_THEME = {
         translucentColor: COLOR_PALLETE.translucent.green,
       },
       secondary: {
-        mainColor: COLOR_PALLETE.darkGrey,
+        mainColor: COLOR_PALLETE.backgroundLayers.three,
         highlightColor: COLOR_PALLETE.highlight.grey,
         translucentColor: COLOR_PALLETE.translucent.grey,
       },

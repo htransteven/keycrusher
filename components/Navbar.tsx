@@ -20,7 +20,7 @@ const NavbarContainer = styled.div<{ hasScrolled: boolean }>`
   gap: 10px;
   background-color: ${({ hasScrolled, theme }) =>
     hasScrolled ? theme.navbar.backgroundColor : "transparent"};
-  padding: 20px 30px;
+  padding: 15px 30px;
 
   transition: 0.2s background-color;
 
