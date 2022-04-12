@@ -4,7 +4,7 @@ import { useNavHeight } from "../contexts/NavHeightContext";
 import { DailyStats } from "../models/api/stats";
 import { ChallengeSummary as ChallengeSummaryProps } from "../models/firestore/ChallengeSummary";
 import { BREAKPOINTS } from "../styles/breakpoints";
-import { ChallengeSummary } from "./ChallengeSummary";
+import { ChallengeSummary, Title } from "./ChallengeSummary";
 import { ResponseVsKeyChart } from "./charts/ResponseVsKeyChart";
 import { ResponseVsKeyUsageTimeChart } from "./charts/ResponseVsKeyUsageTimeChart";
 import { WPMVsTimeChart } from "./charts/WPMVsTimeChart";
@@ -37,6 +37,18 @@ const LeftContainer = styled.div<{ navHeight: number }>`
     position: static;
     width: 100%;
   }
+`;
+
+const MessageContainer = styled.div`
+  display: flex;
+  flex-flow: column;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 4px 16px rgb(10 10 10 / 20%);
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.backgroundLayers.two};
+  padding: 20px;
 `;
 
 const GraphContainer = styled.div`
@@ -78,6 +90,12 @@ export const PostChallengeStats: React.FC<{
         {challengeSummary && <ChallengeSummary {...challengeSummary} />}
         {dailyStats && <DailyStatsSummary {...dailyStats} />}
       </LeftContainer>
+      {!challengeSummary && (
+        <MessageContainer>
+          <Title>Analysis</Title>
+          <p>Complete the daily challenge to see your data.</p>
+        </MessageContainer>
+      )}
       {challengeSummary && (
         <GraphContainer>
           <GraphWrapper>

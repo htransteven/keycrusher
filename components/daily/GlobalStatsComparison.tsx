@@ -3,26 +3,35 @@ import { ChallengeSummary } from "../../models/firestore/ChallengeSummary";
 import { DailyChallenge } from "../../models/firestore/DailyChallenge";
 import { BREAKPOINTS } from "../../styles/breakpoints";
 import { toFixed } from "../../utils/numbers";
+import ArrowUpIcon from "../../assets/arrow-up-solid.svg";
+import ArrowDownIcon from "../../assets/arrow-down-solid.svg";
+import GlobeIcon from "../../assets/earth-americas-solid.svg";
 
 const Container = styled.div`
-  border-radius: 3px;
+  box-shadow: 0 4px 16px rgb(10 10 10 / 20%);
+  border-radius: 8px;
+  background-color: ${({ theme }) => theme.backgroundLayers.two};
   padding: 20px;
-  box-shadow: rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-  background-color: ${({ theme }) => theme.generic.container.backgroundColor};
-  border: 1px solid ${({ theme }) => theme.green};
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
   justify-content: flex-start;
-  margin: 25px 0;
-  @media only screen and (max-width: ${BREAKPOINTS.mobile}) {
-    padding: 10px;
-  }
 `;
 
-const Title = styled.span`
+const IconWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.primaryTextColor};
+  font-size: 1rem;
+`;
+
+const Title = styled.h3`
+  display: flex;
+  flex-flow: row wrap;
+  gap: 10px;
   font-weight: 500;
+  margin: 0;
 `;
 
 const StatsGrid = styled.div`
@@ -33,39 +42,39 @@ const StatsGrid = styled.div`
 
 const StatsGridRowLabel = styled.span`
   font-size: 0.9rem;
-  color: ${({ theme }) => theme.secondaryTextColor};
+  color: ${({ theme }) => theme.tertiaryTextColor};
 `;
 const StatsGridRowValue = styled.span`
-  font-size: 1rem;
-  border-bottom: 1px solid ${({ theme }) => theme.generic.grid.borderColor};
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.primaryTextColor};
+  border-bottom: 1px solid ${({ theme }) => theme.backgroundLayers.three};
 
   transition: 0.15s background-color;
-
-  &:first-of-type {
-    border-radius: 3px 0 0 3px;
-  }
-
-  &:last-of-type {
-    border-radius: 0 3px 3px 0;
-  }
+  display: flex;
+  align-items: center;
+  gap: 5px;
 `;
 
 const StatsGridRow = styled.div`
   display: contents;
 
   & > * {
-    padding: 10px;
+    padding: 10px 20px;
+
+    &:first-of-type,
+    &:last-of-type {
+      padding: 10px 0;
+    }
   }
 
   &:nth-of-type(2) {
     & > * {
-      border-top: 1px solid ${({ theme }) => theme.generic.grid.borderColor};
+      border-top: 1px solid ${({ theme }) => theme.backgroundLayers.three};
     }
   }
 
   &:hover > ${StatsGridRowValue} {
-    background-color: ${({ theme }) =>
-      theme.generic.grid.row.hover.backgroundColor};
+    background-color: ${({ theme }) => theme.backgroundLayers.three};
   }
 `;
 
@@ -75,19 +84,39 @@ const DifferenceValue: React.FC<{
   inversePositivity?: boolean;
 }> = ({ value, unit, inversePositivity }) => {
   const theme = useTheme();
+
+  const color = inversePositivity
+    ? value <= 0
+      ? theme.green
+      : theme.red
+    : value >= 0
+    ? theme.green
+    : theme.red;
+
   return (
     <StatsGridRowValue
       style={{
-        color: inversePositivity
-          ? value <= 0
-            ? theme.green
-            : theme.red
-          : value >= 0
-          ? theme.green
-          : theme.red,
+        color,
       }}
     >
-      {value >= 0 ? "▲" : "▼"} {value}
+      {value >= 0 ? (
+        <IconWrapper>
+          <ArrowUpIcon
+            style={{
+              fill: color,
+            }}
+          />
+        </IconWrapper>
+      ) : (
+        <IconWrapper>
+          <ArrowDownIcon
+            style={{
+              fill: color,
+            }}
+          />
+        </IconWrapper>
+      )}{" "}
+      {value}
       {unit !== "%" && " "}
       {unit}
     </StatsGridRowValue>
@@ -105,11 +134,17 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
 }) => {
   return (
     <Container>
+      <Title>
+        <IconWrapper>
+          <GlobeIcon />
+        </IconWrapper>
+        Global Average Comparison
+      </Title>
       <StatsGrid>
         <StatsGridRow>
-          <Title>Global Comparison 🌎</Title>
+          <StatsGridRowLabel>Measurement</StatsGridRowLabel>
           <StatsGridRowLabel>You</StatsGridRowLabel>
-          <StatsGridRowLabel>Global Avg.</StatsGridRowLabel>
+          <StatsGridRowLabel>Global</StatsGridRowLabel>
           <StatsGridRowLabel>Difference</StatsGridRowLabel>
         </StatsGridRow>
         <StatsGridRow>
@@ -140,8 +175,7 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           </StatsGridRowValue>
           <StatsGridRowValue>
             {toFixed(
-              (dailyChallenge.sumAccuracy / (dailyChallenge.attempts - 1)) *
-                100,
+              (dailyChallenge.sumAccuracy / dailyChallenge.attempts) * 100,
               2
             )}
             %
@@ -157,7 +191,7 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           />
         </StatsGridRow>
         <StatsGridRow>
-          <StatsGridRowValue>Challenge Duration</StatsGridRowValue>
+          <StatsGridRowValue>Duration</StatsGridRowValue>
           <StatsGridRowValue>
             {toFixed(summary.challengeDuration / 1000, 3)} s
           </StatsGridRowValue>

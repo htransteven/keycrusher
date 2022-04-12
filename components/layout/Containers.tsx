@@ -39,29 +39,36 @@ interface PaddedContainerProps {
   includeNavPadding?: boolean;
 }
 
-export const PaddedContainer: React.FC<PaddedContainerProps> = ({
-  paddingSize = "default",
-  includeNavPadding,
-  children,
-}) => {
+export const PaddedContainer: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & PaddedContainerProps
+> = ({ paddingSize = "default", includeNavPadding, children, ...divProps }) => {
   const navHeight = useNavHeight();
 
   switch (paddingSize) {
     case "less":
       return (
-        <LessPaddedContainerDiv navHeight={includeNavPadding ? navHeight : 0}>
+        <LessPaddedContainerDiv
+          {...divProps}
+          navHeight={includeNavPadding ? navHeight : 0}
+        >
           {children}
         </LessPaddedContainerDiv>
       );
     case "more":
       return (
-        <MorePaddedContainerDiv navHeight={includeNavPadding ? navHeight : 0}>
+        <MorePaddedContainerDiv
+          {...divProps}
+          navHeight={includeNavPadding ? navHeight : 0}
+        >
           {children}
         </MorePaddedContainerDiv>
       );
     default:
       return (
-        <PaddedContainerDiv navHeight={includeNavPadding ? navHeight : 0}>
+        <PaddedContainerDiv
+          {...divProps}
+          navHeight={includeNavPadding ? navHeight : 0}
+        >
           {children}
         </PaddedContainerDiv>
       );

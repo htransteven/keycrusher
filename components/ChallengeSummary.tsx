@@ -27,18 +27,18 @@ const Container = styled.div`
   }
 `;
 
-const Title = styled.h3`
+export const Title = styled.h3`
   width: 100%;
   margin: 0;
 `;
 
-const DataContainer = styled.div`
+export const DataContainer = styled.div`
   display: flex;
   flex-flow: column nowrap;
   width: 100%;
 `;
 
-const DataWrapper = styled.div`
+export const DataWrapper = styled.div`
   display: flex;
   width: 100%;
   flex-flow: row wrap;

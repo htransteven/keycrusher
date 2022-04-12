@@ -45,9 +45,18 @@ const HomePage: NextPage = () => {
         const data = (await res.json()) as DailyStats;
         setDailyStats(data);
       } else {
-        const dailyStatsString = localStorage.getItem(
+        let dailyStatsString = localStorage.getItem(
           LOCALSTORAGE_DAILY_STATS_KEY
         );
+
+        if (dailyStatsString) {
+          const storedStats = JSON.parse(dailyStatsString);
+
+          // check for old stats model
+          if (storedStats["prevAttempt"]) {
+            dailyStatsString = "";
+          }
+        }
         const newStats = dailyStatsString
           ? JSON.parse(dailyStatsString)
           : {
@@ -247,23 +256,26 @@ const HomePage: NextPage = () => {
             onComplete={onComplete}
             onReset={() => {}}
             disabled={hasAttempted}
+            coverGradient={
+              "linear-gradient(45deg, rgba(42,90,199,1) 0%, rgba(240,84,84,1) 100%)"
+            }
           />
         )}
       </PaddedContainer>
-      <PaddedContainer>
+      <PaddedContainer
+        style={{ display: "flex", flexFlow: "column", gap: "10px" }}
+      >
+        {dailyChallenge && challengeSummary && (
+          <GlobalStatsComparison
+            dailyChallenge={dailyChallenge}
+            summary={challengeSummary}
+          />
+        )}
         <PostChallengeStats
           challengeSummary={challengeSummary}
           dailyStats={dailyStats}
         />
       </PaddedContainer>
-      {dailyChallenge && challengeSummary && (
-        <PaddedContainer>
-          <GlobalStatsComparison
-            dailyChallenge={dailyChallenge}
-            summary={challengeSummary}
-          />
-        </PaddedContainer>
-      )}
     </>
   );
 };
