@@ -14,7 +14,11 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
             <priority>1.0</priority>
         </url>
         <url>
-            <loc>https://keycrusher.com/daily</loc>
+            <loc>https://keycrusher.com/challenges/classic</loc>
+            <priority>1.0</priority>
+        </url>
+        <url>
+            <loc>https://keycrusher.com/challenges/daily</loc>
             <priority>1.0</priority>
         </url>
         <url>
