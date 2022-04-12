@@ -154,18 +154,11 @@ export const GlobalStatsComparison: React.FC<GlobalComparisonProps> = ({
           <StatsGridRowValue>WPM</StatsGridRowValue>
           <StatsGridRowValue>{toFixed(summary.wpm, 2)} wpm</StatsGridRowValue>
           <StatsGridRowValue>
-            {toFixed(
-              (dailyChallenge.sumWPM - summary.wpm) /
-                (dailyChallenge.attempts - 1),
-              2
-            )}{" "}
-            wpm
+            {toFixed(dailyChallenge.sumWPM / dailyChallenge.attempts, 2)} wpm
           </StatsGridRowValue>
           <DifferenceValue
             value={toFixed(
-              summary.wpm -
-                (dailyChallenge.sumWPM - summary.wpm) /
-                  (dailyChallenge.attempts - 1),
+              summary.wpm - dailyChallenge.sumWPM / dailyChallenge.attempts,
               2
             )}
             unit={"wpm"}
