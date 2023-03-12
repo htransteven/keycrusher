@@ -1,5 +1,7 @@
 # Key Crusher
 
+__Note:__ Firebase credentials have been revoked from GCP so there should be no concerns with this repo being public.
+
 🔥 Challenge yourself and become the next best keyboard warrior!
 
 Live at [keycrusher.com](https://keycrusher.com)! 🚀 (Domain expired as of March 10, 2023)
