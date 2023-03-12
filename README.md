@@ -2,7 +2,7 @@
 
 🔥 Challenge yourself and become the next best keyboard warrior!
 
-Live at [keycrusher.com](https://keycrusher.com)! 🚀
+Live at [keycrusher.com](https://keycrusher.com)! 🚀 (Domain expired as of March 10, 2023)
 
 ## Technology
 
@@ -17,4 +17,4 @@ Live at [keycrusher.com](https://keycrusher.com)! 🚀
 ## Contact
 
 👨‍💻 Steven Huynh-Tran
-</br>📧 hello@keycrusher.com
+</br>📧 hello@keycrusher.com (Domain expired as of March 10, 2023)
