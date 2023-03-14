@@ -4,7 +4,7 @@ __Note:__ Firebase credentials have been revoked from GCP so there should be no 
 
 🔥 Challenge yourself and become the next best keyboard warrior!
 
-Live at [keycrusher.com](https://keycrusher.com)! 🚀 (Domain expired as of March 10, 2023)
+Live at ~~[keycrusher.com](https://keycrusher.com)~~ [keycrusher.vercel.app](https://keycrusher.vercel.app)! 🚀 (Domain expired as of March 10, 2023)
 
 ## Technology
 
